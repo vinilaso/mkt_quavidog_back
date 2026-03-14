@@ -2,7 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sienna.Application.Interfaces;
 using Sienna.Domain.Entities.Identity;
+using Sienna.Infrastructure.Authentication;
 
 namespace Sienna.Infrastructure
 {
@@ -12,6 +14,7 @@ namespace Sienna.Infrastructure
         {
             AddDataBase(services, configuration);
             AddIdentity(services);
+            AddLocalServices(services);
 
             return services;
         }
@@ -36,6 +39,11 @@ namespace Sienna.Infrastructure
             })
             .AddEntityFrameworkStores<ApplicationContext>()
             .AddDefaultTokenProviders();
+        }
+
+        private static void AddLocalServices(IServiceCollection services)
+        {
+            services.AddScoped<ITokenService, TokenService>();
         }
     }
 }
