@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sienna.Application\Sienna.Application.csproj" />
+    <ProjectReference Include="..\Sienna.Infrastructure\Sienna.Infrastructure.csproj" />
+    <ProjectReference Include="..\Sienna.Shared\Sienna.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

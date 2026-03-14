@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sienna.Application\Sienna.Application.csproj" />
+    <ProjectReference Include="..\Sienna.Domain\Sienna.Domain.csproj" />
+    <ProjectReference Include="..\Sienna.Shared\Sienna.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,1 +1,7 @@
-<Solution />
+<Solution>
+  <Project Path="Sienna.Application/Sienna.Application.csproj" />
+  <Project Path="Sienna.Domain/Sienna.Domain.csproj" />
+  <Project Path="Sienna.Infrastructure/Sienna.Infrastructure.csproj" />
+  <Project Path="Sienna.Shared/Sienna.Shared.csproj" />
+  <Project Path="Sienna.WebApi/Sienna.WebApi.csproj" />
+</Solution>
