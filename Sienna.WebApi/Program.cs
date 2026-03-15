@@ -20,6 +20,8 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
+app.UseCors("VueApp");
+
 app.UseAuthentication();
 app.UseAuthorization();
 

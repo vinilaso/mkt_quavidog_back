@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Sienna.Application.Mappings.Identity;
@@ -11,6 +12,7 @@ namespace Sienna.WebApi
         internal static IServiceCollection AddWebServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddControllers();
+            services.AddCors(AddVueAppPolicy);
 
             AddApiExplorer(services);
             AddApiAuthentication(services, configuration);
@@ -74,6 +76,16 @@ namespace Sienna.WebApi
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
                 };
+            });
+        }
+
+        private static void AddVueAppPolicy(CorsOptions options)
+        {
+            options.AddPolicy("VueApp", policy =>
+            {
+                policy.WithOrigins("https://dashboard-mkt.onrender.com");
+                policy.AllowAnyHeader();
+                policy.AllowAnyMethod();
             });
         }
     }
