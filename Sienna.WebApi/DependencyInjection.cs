@@ -83,7 +83,7 @@ namespace Sienna.WebApi
         {
             options.AddPolicy("VueApp", policy =>
             {
-                policy.WithOrigins("https://dashboard-mkt.onrender.com");
+                policy.WithOrigins("https://dashboard-mkt.onrender.com", "http://localhost:5173/");
                 policy.AllowAnyHeader();
                 policy.AllowAnyMethod();
             });
