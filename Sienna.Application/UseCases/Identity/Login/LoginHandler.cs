@@ -1,26 +1,33 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Sienna.Application.Interfaces;
+using Sienna.Domain.Abstractions;
 using Sienna.Domain.Entities.Identity;
 
 namespace Sienna.Application.UseCases.Identity.Login
 {
-    public sealed class LoginHandler(UserManager<User> userManager, ITokenService tokenService) : IRequestHandler<LoginCommand, string>
+    public sealed class LoginHandler(UserManager<User> userManager, ITokenService tokenService) : IRequestHandler<LoginCommand, Result<string>>
     {
-        public async Task<string> Handle(LoginCommand request, CancellationToken cancellationToken)
+        private static readonly Error UnauthorizedError = Error.Unauthorized("InvalidCredentials", "Email or password is invalid.");
+
+        public async Task<Result<string>> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
-            User user = await userManager.FindByEmailAsync(request.Email)
-                ?? throw GetInvalidCredentialsException();
+            var user = await userManager.FindByEmailAsync(request.Email);
+
+            if (user is null) 
+                return UnauthorizedError;
+
+            if (await userManager.IsLockedOutAsync(user))
+                return UnauthorizedError;
 
             if (!await userManager.CheckPasswordAsync(user, request.Password))
-                throw GetInvalidCredentialsException();
+            {
+                await userManager.AccessFailedAsync(user);
+                return UnauthorizedError;
+            }
 
+            await userManager.ResetAccessFailedCountAsync(user);
             return tokenService.GenerateToken(user);
-        }
-
-        private static InvalidOperationException GetInvalidCredentialsException()
-        {
-            return new InvalidOperationException("Invalid credentials.");
         }
     }
 }

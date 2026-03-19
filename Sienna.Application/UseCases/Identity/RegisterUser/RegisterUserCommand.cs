@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Sienna.Domain.Abstractions;
 
 namespace Sienna.Application.UseCases.Identity.RegisterUser
 {
@@ -6,5 +7,5 @@ namespace Sienna.Application.UseCases.Identity.RegisterUser
         string Email,
         string Password,
         string FullName
-    ) : IRequest<Guid>;
+    ) : IRequest<Result<Guid>>;
 }

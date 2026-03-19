@@ -1,12 +1,13 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Sienna.Domain.Abstractions;
 using Sienna.Domain.Entities.Identity;
 
 namespace Sienna.Application.UseCases.Identity.RegisterUser
 {
-    public sealed class RegisterUserHandler(UserManager<User> userManager) : IRequestHandler<RegisterUserCommand, Guid>
+    public sealed class RegisterUserHandler(UserManager<User> userManager) : IRequestHandler<RegisterUserCommand, Result<Guid>>
     {
-        public async Task<Guid> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
+        public async Task<Result<Guid>> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
         {
             User user = new()
             {
@@ -16,12 +17,23 @@ namespace Sienna.Application.UseCases.Identity.RegisterUser
                 UserName = request.Email
             };
 
-            IdentityResult result = await userManager.CreateAsync(user, request.Password);
+            var result = await userManager.CreateAsync(user, request.Password);
 
-            if (!result.Succeeded)
-                throw new InvalidOperationException(string.Join(", ", result.Errors.Select(e => e.Description)));
+            if (result.Succeeded)
+            {
+                return user.Id;
+            }
 
-            return user.Id;
+            var blockingError = result.Errors.First();
+
+            return blockingError.Code switch
+            {
+                nameof(IdentityErrorDescriber.DuplicateUserName) or 
+                nameof(IdentityErrorDescriber.DuplicateEmail) or 
+                nameof(IdentityErrorDescriber.ConcurrencyFailure) => Error.Conflict(blockingError.Code, blockingError.Description),
+
+                _ => Error.Validation(blockingError.Code, blockingError.Description)
+            };
         }
     }
 }
