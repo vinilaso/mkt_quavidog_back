@@ -11,6 +11,8 @@ builder.Services.AddWebServices();
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
+
 app.Services.ForceMigration();
 
 app.MapApiReferences();

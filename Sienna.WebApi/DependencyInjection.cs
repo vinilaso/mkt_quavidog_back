@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.AspNetCore.HttpOverrides;
 using Scalar.AspNetCore;
 using Sienna.WebApi.OpenApi;
 
@@ -11,6 +12,7 @@ namespace Sienna.WebApi
             services.AddControllers();
             services.AddCors(AddVueAppPolicy);
             AddEndpointsExplorer(services);
+            AddForwardedHeaders(services);
 
             return services;
         }
@@ -45,6 +47,16 @@ namespace Sienna.WebApi
                 policy.WithOrigins("https://dashboard-mkt.onrender.com", "http://localhost:5173");
                 policy.AllowAnyHeader();
                 policy.AllowAnyMethod();
+            });
+        }
+
+        private static void AddForwardedHeaders(IServiceCollection services)
+        {
+            services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.KnownIPNetworks.Clear();
+                options.KnownProxies.Clear();
             });
         }
     }
