@@ -11,26 +11,22 @@ namespace Sienna.WebApi.Controllers
             if (result.IsSuccess)
                 throw new InvalidOperationException("Cannot handle failure for a successful result.");
 
-            return result.Error.ErrorType switch
+            int statusCode = result.Error.ErrorType switch
             {
-                ErrorType.NotFound => NotFound(CreateProblemDetails(StatusCodes.Status404NotFound, result.Error)),
-                ErrorType.Validation => BadRequest(CreateProblemDetails(StatusCodes.Status400BadRequest, result.Error)),
-                ErrorType.Conflict => Conflict(CreateProblemDetails(StatusCodes.Status409Conflict, result.Error)),
-                ErrorType.Unauthorized => Unauthorized(CreateProblemDetails(StatusCodes.Status401Unauthorized, result.Error)),
-                ErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, CreateProblemDetails(StatusCodes.Status403Forbidden, result.Error)),
-                _ => BadRequest(CreateProblemDetails(StatusCodes.Status400BadRequest, result.Error))
+                ErrorType.NotFound => StatusCodes.Status404NotFound,
+                ErrorType.Validation => StatusCodes.Status400BadRequest,
+                ErrorType.Conflict => StatusCodes.Status409Conflict,
+                ErrorType.Unauthorized => StatusCodes.Status401Unauthorized,
+                ErrorType.Forbidden => StatusCodes.Status403Forbidden,
+                _ => StatusCodes.Status400BadRequest
             };
-        }
 
-        private static ProblemDetails CreateProblemDetails(int status, Error error)
-        {
-            return new()
-            {
-                Status = status,
-                Type = error.Code,
-                Title = "A domain error ocurred.",
-                Detail = error.Message
-            };
+            return Problem(
+                statusCode: statusCode,
+                title: "A domain error occurred.",
+                type: result.Error.Code,
+                detail: result.Error.Message
+            );
         }
     }
 }
