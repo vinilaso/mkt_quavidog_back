@@ -1,11 +1,14 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Sienna.Application.UseCases.Identity.RegisterUser.Events;
 using Sienna.Domain.Abstractions;
 using Sienna.Domain.Entities.Identity;
 
 namespace Sienna.Application.UseCases.Identity.RegisterUser
 {
-    public sealed class RegisterUserHandler(UserManager<User> userManager) : IRequestHandler<RegisterUserCommand, Result<Guid>>
+    public sealed class RegisterUserHandler(
+        UserManager<User> userManager,
+        IPublisher publisher) : IRequestHandler<RegisterUserCommand, Result<Guid>>
     {
         public async Task<Result<Guid>> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
         {
@@ -21,6 +24,7 @@ namespace Sienna.Application.UseCases.Identity.RegisterUser
 
             if (result.Succeeded)
             {
+                await publisher.Publish(new UserRegisteredNotification(user.FullName, user.Email), cancellationToken);
                 return user.Id;
             }
 
