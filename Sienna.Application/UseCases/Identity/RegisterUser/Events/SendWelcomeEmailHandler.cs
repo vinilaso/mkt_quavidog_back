@@ -21,7 +21,7 @@ namespace Sienna.Application.UseCases.Identity.RegisterUser.Events
 
             if (result.IsFailure)
             {
-                logger.LogError("Falha ao enviar o e-mail de boas vindas para {Email}. Erro: {Error}", notification.Email, result.Error);
+                logger.LogError("Falha ao enviar o e-mail de boas vindas para {Email}. Erro: {Error}", notification.Email, result.Error.Message);
             }
         }
     }
