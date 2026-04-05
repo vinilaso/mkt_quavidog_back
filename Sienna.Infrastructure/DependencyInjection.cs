@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Sienna.Application.Interfaces;
 using Sienna.Domain.Entities.Identity;
 using Sienna.Infrastructure.Authentication;
+using Sienna.Infrastructure.Email.MailerSend;
 
 namespace Sienna.Infrastructure
 {
@@ -15,6 +16,8 @@ namespace Sienna.Infrastructure
             AddDataBase(services, configuration);
             AddIdentity(services);
             AddLocalServices(services);
+
+            services.AddMailerSendEmail(configuration);
 
             return services;
         }
@@ -34,6 +37,8 @@ namespace Sienna.Infrastructure
         {
             services.AddIdentity<User, IdentityRole<Guid>>(options =>
             {
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
                 options.User.RequireUniqueEmail = true;
                 options.User.AllowedUserNameCharacters = string.Empty;
             })
