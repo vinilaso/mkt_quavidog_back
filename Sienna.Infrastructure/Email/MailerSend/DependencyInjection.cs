@@ -10,14 +10,14 @@ namespace Sienna.Infrastructure.Email.MailerSend
     {
         public static IServiceCollection AddMailerSendEmail(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddOptions<EmailSettings>()
-                .Bind(configuration.GetSection(nameof(EmailSettings)))
+            services.AddOptions<MailerSendSettings>()
+                .Bind(configuration.GetSection(nameof(MailerSendSettings)))
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 
             services.AddHttpClient<IEmailService, MailerSendService>((serviceProvider, client) =>
             {
-                var settings = serviceProvider.GetRequiredService<IOptions<EmailSettings>>().Value;
+                var settings = serviceProvider.GetRequiredService<IOptions<MailerSendSettings>>().Value;
 
                 client.BaseAddress = new Uri("https://api.mailersend.com/v1/");
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);

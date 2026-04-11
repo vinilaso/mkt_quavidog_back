@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Sienna.Infrastructure.Email
+namespace Sienna.Infrastructure.Email.MailKit
 {
-    public record SmtpSettings
+    public record MailKitSettings
     {
         [Required(ErrorMessage = "O host SMTP não foi definido.")]
         public string Host { get; set; } = string.Empty;

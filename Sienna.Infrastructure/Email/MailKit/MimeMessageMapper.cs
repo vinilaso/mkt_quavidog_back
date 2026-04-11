@@ -6,7 +6,7 @@ namespace Sienna.Infrastructure.Email.MailKit
 {
     internal static class MimeMessageMapper
     {
-        internal static MimeMessage MapMimeMessage(this MailMessage message, SmtpSettings settings)
+        internal static MimeMessage MapMimeMessage(this MailMessage message, MailKitSettings settings)
         {
             var mimeMessage = new MimeMessage();
 

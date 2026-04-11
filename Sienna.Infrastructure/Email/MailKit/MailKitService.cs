@@ -9,7 +9,7 @@ namespace Sienna.Infrastructure.Email.MailKit
 {
     public sealed partial class MailKitService(
         ILogger<MailKitService> logger,
-        IOptions<SmtpSettings> smtpSettings) : IEmailService
+        IOptions<MailKitSettings> smtpSettings) : IEmailService
     {
         public async Task<Result> SendMessageAsync(MailMessage message, CancellationToken cancellationToken = default)
         {

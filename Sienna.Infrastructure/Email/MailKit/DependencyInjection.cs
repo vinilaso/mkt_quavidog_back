@@ -8,8 +8,8 @@ namespace Sienna.Infrastructure.Email.MailKit
     {
         public static IServiceCollection AddMailKitService(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddOptions<SmtpSettings>()
-                .Bind(configuration.GetSection(nameof(SmtpSettings)))
+            services.AddOptions<MailKitSettings>()
+                .Bind(configuration.GetSection(nameof(MailKitSettings)))
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 

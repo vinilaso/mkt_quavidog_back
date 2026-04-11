@@ -10,7 +10,7 @@ namespace Sienna.Infrastructure.Email.MailerSend
 {
     public sealed class MailerSendService(
         HttpClient httpClient, 
-        IOptions<EmailSettings> options,
+        IOptions<MailerSendSettings> options,
         ILogger<MailerSendService> logger) : IEmailService
     {
         private record UnprocessableEntityResponse(string Message, Dictionary<string, string[]>? Errors);

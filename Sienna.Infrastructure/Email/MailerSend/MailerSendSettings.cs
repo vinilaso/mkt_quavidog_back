@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Sienna.Infrastructure.Email
+namespace Sienna.Infrastructure.Email.MailerSend
 {
-    public sealed record EmailSettings
+    public sealed record MailerSendSettings
     {
         [Required(ErrorMessage = "A chave da API do fornecedor de e-mail não foi preenchida.")]
         public string ApiKey { get; set; } = string.Empty;

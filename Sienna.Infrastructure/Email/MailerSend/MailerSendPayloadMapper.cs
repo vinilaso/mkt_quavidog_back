@@ -4,7 +4,7 @@ namespace Sienna.Infrastructure.Email.MailerSend
 {
     internal static class MailerSendPayloadMapper
     {
-        internal static MailerSendPayload MapMailerSend(this MailMessage mailMessage, EmailSettings settings)
+        internal static MailerSendPayload MapMailerSend(this MailMessage mailMessage, MailerSendSettings settings)
         {
             return new MailerSendPayload(
                 From: new MailerSendAddress(settings.SenderEmail, settings.SenderName),
