@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Sienna.Application.Interfaces;
 using Sienna.Domain.Entities.Identity;
 using Sienna.Infrastructure.Authentication;
-using Sienna.Infrastructure.Email.MailKit;
+using Sienna.Infrastructure.Email.Resend;
 
 namespace Sienna.Infrastructure
 {
@@ -17,7 +17,7 @@ namespace Sienna.Infrastructure
             AddIdentity(services);
             AddLocalServices(services);
 
-            services.AddMailKitService(configuration);
+            services.AddResendService(configuration);
 
             return services;
         }
