@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.HttpOverrides;
 using Scalar.AspNetCore;
+using Sienna.WebApi.HostedServices.Email;
 using Sienna.WebApi.OpenApi;
 
 namespace Sienna.WebApi
@@ -13,6 +14,7 @@ namespace Sienna.WebApi
             services.AddCors(AddVueAppPolicy);
             AddEndpointsExplorer(services);
             AddForwardedHeaders(services);
+            AddHostedServices(services);
 
             return services;
         }
@@ -58,6 +60,11 @@ namespace Sienna.WebApi
                 options.KnownIPNetworks.Clear();
                 options.KnownProxies.Clear();
             });
+        }
+
+        private static void AddHostedServices(IServiceCollection services)
+        {
+            services.AddHostedService<EmailBackgroundWorker>();
         }
     }
 }
