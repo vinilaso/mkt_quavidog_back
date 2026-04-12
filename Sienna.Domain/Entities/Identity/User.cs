@@ -4,7 +4,7 @@ namespace Sienna.Domain.Entities.Identity
 {
     public class User : IdentityUser<Guid>, IBaseEntity
     {
-        public string? FullName { get; set; }
+        public string FullName { get; set; } = string.Empty;
 
         public bool Equals(IBaseEntity? other)
         {

@@ -1,14 +1,14 @@
 ﻿using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Sienna.Application.Interfaces;
 using Sienna.Application.UseCases.Identity.Login.Events;
 using Sienna.Domain.Abstractions;
+using Sienna.Domain.Abstractions.Identity;
 using Sienna.Domain.Entities.Identity;
 
 namespace Sienna.Application.UseCases.Identity.Login
 {
     public sealed class LoginHandler(
-        UserManager<User> userManager, 
+        IIdentityService identityService,
         ITokenService tokenService,
         IPublisher publisher) : IRequestHandler<LoginCommand, Result<string>>
     {
@@ -16,28 +16,24 @@ namespace Sienna.Application.UseCases.Identity.Login
 
         public async Task<Result<string>> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
-            var user = await userManager.FindByEmailAsync(request.Email);
+            var authenticationResult = await identityService.AuthenticateAsync(request.Email, request.Password, cancellationToken);
 
-            if (user is null) 
+            if (authenticationResult.User is not User user)
                 return UnauthorizedError;
 
-            if (await userManager.IsLockedOutAsync(user))
-                return UnauthorizedError;
-
-            if (!await userManager.CheckPasswordAsync(user, request.Password))
+            return authenticationResult.Status switch
             {
-                await userManager.AccessFailedAsync(user);
-                
-                if (await userManager.IsLockedOutAsync(user))
-                {
-                    await publisher.Publish(new UserLockedOutNotification(user.Email!, user.FullName!), cancellationToken);
-                }
+                AuthenticationStatus.Success => tokenService.GenerateToken(user),
+                AuthenticationStatus.LockedOut => await PublishLockedOutNotification(user, cancellationToken),
+                _ => UnauthorizedError
+            };
+        }
 
-                return UnauthorizedError;
-            }
-
-            await userManager.ResetAccessFailedCountAsync(user);
-            return tokenService.GenerateToken(user);
+        private async Task<Result<string>> PublishLockedOutNotification(User user, CancellationToken cancellationToken)
+        {
+            var lockoutNotification = new UserLockedOutNotification(user.Email, user.FullName);
+            await publisher.Publish(lockoutNotification, cancellationToken);
+            return UnauthorizedError;
         }
     }
 }

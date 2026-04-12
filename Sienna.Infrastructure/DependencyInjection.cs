@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sienna.Application.Interfaces;
 using Sienna.Application.Interfaces.Email;
+using Sienna.Domain.Abstractions.Identity;
 using Sienna.Domain.Entities.Identity;
 using Sienna.Infrastructure.Authentication;
 using Sienna.Infrastructure.Email.Queue;
@@ -51,6 +52,8 @@ namespace Sienna.Infrastructure
         private static void AddLocalServices(IServiceCollection services)
         {
             services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IIdentityService, IdentityService>();
+
             services.AddSingleton<IEmailQueue, InMemoryEmailQueue>(services => new InMemoryEmailQueue(500));
         }
     }
