@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Identity;
+using Sienna.Domain.Abstractions.Results;
 using Sienna.Domain.Entities.Identity;
 
 namespace Sienna.Infrastructure.Authentication

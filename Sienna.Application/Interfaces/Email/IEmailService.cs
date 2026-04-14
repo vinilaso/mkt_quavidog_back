@@ -1,4 +1,4 @@
-﻿using Sienna.Domain.Abstractions;
+﻿using Sienna.Domain.Abstractions.Results;
 
 namespace Sienna.Application.Interfaces.Email
 {

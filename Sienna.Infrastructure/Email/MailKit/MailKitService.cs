@@ -3,7 +3,7 @@ using MailKit.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Sienna.Application.Interfaces.Email;
-using Sienna.Domain.Abstractions;
+using Sienna.Domain.Abstractions.Results;
 
 namespace Sienna.Infrastructure.Email.MailKit
 {

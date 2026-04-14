@@ -1,4 +1,4 @@
-﻿namespace Sienna.Domain.Abstractions
+﻿namespace Sienna.Domain.Abstractions.Results
 {
     public record Error(string Code, string Message, ErrorType ErrorType)
     {

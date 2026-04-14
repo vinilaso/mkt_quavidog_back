@@ -2,6 +2,7 @@ using Sienna.Application;
 using Sienna.Infrastructure;
 using Sienna.Infrastructure.Migrations;
 using Sienna.WebApi;
+using Sienna.WebApi.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +27,7 @@ app.UseCors("VueApp");
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapIdentityEndpoints();
 
 app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
 

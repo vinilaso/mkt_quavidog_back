@@ -1,4 +1,4 @@
-﻿namespace Sienna.Domain.Abstractions
+﻿namespace Sienna.Domain.Abstractions.Results
 {
     public class Result
     {

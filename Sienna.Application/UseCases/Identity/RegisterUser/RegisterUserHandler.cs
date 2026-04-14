@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Sienna.Application.UseCases.Identity.RegisterUser.Events;
-using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Identity;
+using Sienna.Domain.Abstractions.Results;
 
 namespace Sienna.Application.UseCases.Identity.RegisterUser
 {
