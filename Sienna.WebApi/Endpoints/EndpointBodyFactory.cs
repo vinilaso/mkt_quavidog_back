@@ -23,6 +23,24 @@ namespace Sienna.WebApi.Endpoints
             };
         }
 
+        public static Func<TRequest, IMediator, Task<IResult>> Create<TRequest>(Func<IResult> onSuccess) where TRequest : IRequest<Result>
+        {
+            return async (request, mediator) =>
+            {
+                var result = await mediator.Send(request);
+
+                if (result.IsSuccess)
+                    return onSuccess();
+
+                return TypedResults.Problem(
+                    statusCode: GetStatusCode(result),
+                    title: "A domain error ocurred.",
+                    type: result.Error.Code,
+                    detail: result.Error.Message
+                );
+            };
+        }
+
         private static int GetStatusCode(Result result)
         {
             return result.Error.ErrorType switch

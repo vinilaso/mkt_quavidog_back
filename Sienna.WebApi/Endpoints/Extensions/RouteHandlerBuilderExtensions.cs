@@ -14,6 +14,16 @@ namespace Sienna.WebApi.Endpoints.Extensions
             });
         }
 
+        internal static RouteHandlerBuilder ProducesWithDescription(this RouteHandlerBuilder builder, int statusCode, string description)
+        {
+            ArgumentNullException.ThrowIfNull(builder, nameof(builder));
+
+            return builder.Produces(statusCode).AddOpenApiOperationTransformer((operation, context, cancellationToken) =>
+            {
+                return AddDescription(operation, statusCode, description);
+            });
+        }
+
         internal static RouteHandlerBuilder ProducesProblemWithDescription(this RouteHandlerBuilder builder, int statusCode, string description)
         {
             ArgumentNullException.ThrowIfNull(builder, nameof(builder));

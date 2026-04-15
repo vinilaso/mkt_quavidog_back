@@ -6,5 +6,7 @@ namespace Sienna.Domain.Abstractions.Identity
     {
         Task<AuthenticationResult> AuthenticateAsync(string email, string password, CancellationToken cancellationToken = default);
         Task<Result<Guid>> RegisterUserAsync(string email, string fullName, string password, CancellationToken cancellationToken = default);
+        Task<Result<string>> GeneratePasswordResetTokenAsync(string email);
+        Task<Result> ChangePasswordAsync(string email, string token, string newPassword);
     }
 }

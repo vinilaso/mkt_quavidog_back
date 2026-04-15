@@ -12,7 +12,7 @@ builder.Services.AddWebServices();
 
 var app = builder.Build();
 
-app.Services.ForceMigration();
+//app.Services.ForceMigration();
 
 app.UseForwardedHeaders();
 
