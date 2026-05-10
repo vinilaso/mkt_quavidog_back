@@ -1,19 +1,25 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Sienna.Domain.Entities.Workflow;
 
 namespace Sienna.Domain.Entities.Identity
 {
-    public class User : IdentityUser<Guid>, IBaseEntity
+    public class User : IdentityUser<Guid>
     {
+        private readonly List<TeamMember> _teams = [];
+
         public string FullName { get; set; } = string.Empty;
+        public IReadOnlyCollection<TeamMember> Teams => _teams.AsReadOnly();
 
-        public bool Equals(IBaseEntity? other)
+        public User(string fullName, string email)
         {
-            if (other is null) return false;
-            if (other is not User) return false;
+            Id = Guid.NewGuid();
+            Email = email;
+            FullName = fullName;
+            UserName = email;
+        }
 
-            if (ReferenceEquals(this, other)) return true;
-
-            return Id.Equals(other.Id);
+        protected User()
+        {
         }
     }
 }

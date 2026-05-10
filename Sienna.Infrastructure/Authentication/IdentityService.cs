@@ -58,13 +58,7 @@ namespace Sienna.Infrastructure.Authentication
 
         public async Task<Result<Guid>> RegisterUserAsync(string email, string fullName, string password, CancellationToken cancellationToken = default)
         {
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                FullName = fullName,
-                Email = email,
-                UserName = email
-            };
+            var user = new User(fullName, email);
 
             var result = await userManager.CreateAsync(user, password);
 

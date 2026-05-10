@@ -3,6 +3,7 @@
     public sealed class ModulePrefix
     {
         public static readonly ModulePrefix Identity = new("IDENTITY");
+        public static readonly ModulePrefix Workflow = new("WORKFLOW");
 
         public string Value { get; }
 

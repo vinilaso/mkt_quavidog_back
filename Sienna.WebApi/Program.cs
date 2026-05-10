@@ -8,11 +8,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddWebServices();
+builder.Services.AddWebServices(builder.Configuration);
 
 var app = builder.Build();
 
-//app.Services.ForceMigration();
+#if DEBUG
+app.Services.ForceMigration();
+#endif
 
 app.UseForwardedHeaders();
 
@@ -28,6 +30,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapIdentityEndpoints();
+app.MapWorkflowEndpoints();
 
 app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
 

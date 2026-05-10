@@ -6,11 +6,16 @@ using Sienna.Application.Interfaces;
 using Sienna.Application.Interfaces.Email;
 using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Identity;
+using Sienna.Domain.Abstractions.Security;
+using Sienna.Domain.Abstractions.Workflow;
 using Sienna.Domain.Entities.Identity;
 using Sienna.Infrastructure.Authentication;
 using Sienna.Infrastructure.Database;
 using Sienna.Infrastructure.Email.Queue;
 using Sienna.Infrastructure.Email.Resend;
+using Sienna.Infrastructure.Repositories.Identity;
+using Sienna.Infrastructure.Repositories.Workflow;
+using Sienna.Infrastructure.Security;
 
 namespace Sienna.Infrastructure
 {
@@ -21,6 +26,7 @@ namespace Sienna.Infrastructure
             AddDataBase(services, configuration);
             AddIdentity(services);
             AddLocalServices(services);
+            AddRepositories(services);
 
             services.AddResendService(configuration);
 
@@ -57,8 +63,15 @@ namespace Sienna.Infrastructure
         {
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IIdentityService, IdentityService>();
+            services.AddScoped<IUserContext, HttpContextUserContext>();
 
             services.AddSingleton<IEmailQueue, InMemoryEmailQueue>(services => new InMemoryEmailQueue(500));
+        }
+
+        private static void AddRepositories(IServiceCollection services)
+        {
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ITeamRepository, TeamRepository>();
         }
     }
 }
