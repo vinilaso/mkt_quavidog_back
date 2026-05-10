@@ -4,9 +4,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sienna.Application.Interfaces;
 using Sienna.Application.Interfaces.Email;
+using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Identity;
 using Sienna.Domain.Entities.Identity;
 using Sienna.Infrastructure.Authentication;
+using Sienna.Infrastructure.Database;
 using Sienna.Infrastructure.Email.Queue;
 using Sienna.Infrastructure.Email.Resend;
 
@@ -34,6 +36,8 @@ namespace Sienna.Infrastructure
             services.AddDbContext<ApplicationContext>(
                 options => options.UseNpgsql(connectionString, b => b.MigrationsAssembly("Sienna.Infrastructure"))
             );
+
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
         }
 
         private static void AddIdentity(IServiceCollection services)
