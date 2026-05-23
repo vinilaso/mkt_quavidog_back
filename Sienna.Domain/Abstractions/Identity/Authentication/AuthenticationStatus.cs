@@ -1,4 +1,4 @@
-﻿namespace Sienna.Domain.Abstractions.Identity
+﻿namespace Sienna.Domain.Abstractions.Identity.Authentication
 {
     public enum AuthenticationStatus
     {

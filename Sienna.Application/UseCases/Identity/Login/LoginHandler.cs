@@ -1,7 +1,8 @@
 ﻿using MediatR;
 using Sienna.Application.Interfaces;
 using Sienna.Application.UseCases.Identity.Login.Events;
-using Sienna.Domain.Abstractions.Identity;
+using Sienna.Domain.Abstractions.Identity.Authentication;
+using Sienna.Domain.Abstractions.Identity.Services;
 using Sienna.Domain.Abstractions.Results;
 using Sienna.Domain.Entities.Identity;
 

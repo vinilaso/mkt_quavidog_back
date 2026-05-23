@@ -3,7 +3,7 @@ using Sienna.Application.UseCases.Workflow.CreateTeam.TeamCreated;
 using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Results;
 using Sienna.Domain.Abstractions.Security;
-using Sienna.Domain.Abstractions.Workflow;
+using Sienna.Domain.Abstractions.Workflow.Repositories;
 using Sienna.Domain.Entities.Workflow;
 
 namespace Sienna.Application.UseCases.Workflow.CreateTeam

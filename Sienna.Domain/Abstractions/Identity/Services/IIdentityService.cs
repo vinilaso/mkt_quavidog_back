@@ -1,6 +1,7 @@
-﻿using Sienna.Domain.Abstractions.Results;
+﻿using Sienna.Domain.Abstractions.Identity.Authentication;
+using Sienna.Domain.Abstractions.Results;
 
-namespace Sienna.Domain.Abstractions.Identity
+namespace Sienna.Domain.Abstractions.Identity.Services
 {
     public interface IIdentityService
     {

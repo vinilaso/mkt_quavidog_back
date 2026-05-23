@@ -23,8 +23,8 @@ namespace Sienna.Infrastructure.Entities.Identity
                 .HasMaxLength(255)
                 .IsRequired();
 
-            builder.Metadata.FindNavigation(nameof(User.Teams))
-                ?.SetPropertyAccessMode(PropertyAccessMode.Field);
+            builder.Navigation(u => u.Teams)
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
         }
     }
 }
