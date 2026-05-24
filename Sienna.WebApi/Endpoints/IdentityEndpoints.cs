@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Sienna.Application.UseCases.Identity.GetUserPosts;
 using Sienna.Application.UseCases.Identity.GetUserProfile;
 using Sienna.Application.UseCases.Identity.GetUserTeams;
 using Sienna.Application.UseCases.Identity.Login;
@@ -65,6 +66,21 @@ namespace Sienna.WebApi.Endpoints
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O ID do usuário autenticado não foi encontrado no servidor.")
                 .WithDescription("Busca os times do usuário autenticado.")
                 .RequireAuthorization();
+
+            group
+                .MapGet("users/me/posts", async (IUserContext userContext, IMediator mediator) =>
+                {
+                    if (!userContext.IsAuthenticated)
+                        return TypedResults.Unauthorized();
+
+                    var query = new GetUserPostsQuery(userContext.Id);
+                    var result = await mediator.Send(query);
+
+                    if (result.IsFailure)
+                        return result.Error.CreateProblemDetails();
+
+                    return TypedResults.Ok(result.Value);
+                });
 
             group
                 .MapPost("users/reset-password/confirm", EndpointBodyFactory.Create<ResetPasswordCommand>(TypedResults.Ok))

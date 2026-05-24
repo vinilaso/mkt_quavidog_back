@@ -12,7 +12,7 @@ namespace Sienna.Infrastructure.Repositories
             await Context.Set<T>().AddAsync(entity, cancellationToken);
         }
 
-        public async Task<T?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public virtual async Task<T?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await Context.Set<T>().FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
         }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Sienna.Domain.Abstractions;
+using Sienna.Domain.Entities.Media;
 using Sienna.Domain.Entities.Workflow;
 
 namespace Sienna.Domain.Entities.Identity
@@ -7,9 +8,11 @@ namespace Sienna.Domain.Entities.Identity
     public class User : IdentityUser<Guid>, IDbEntity
     {
         private readonly List<TeamMember> _teams = [];
+        private readonly List<Post> _posts = [];
 
         public string FullName { get; set; } = string.Empty;
         public IReadOnlyCollection<TeamMember> Teams => _teams.AsReadOnly();
+        public IReadOnlyCollection<Post> Posts => _posts.AsReadOnly();
 
         public User(string fullName, string email)
         {

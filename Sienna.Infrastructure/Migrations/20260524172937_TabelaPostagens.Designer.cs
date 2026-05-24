@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Sienna.Infrastructure;
@@ -11,9 +12,11 @@ using Sienna.Infrastructure;
 namespace Sienna.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20260524172937_TabelaPostagens")]
+    partial class TabelaPostagens
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -317,27 +320,6 @@ namespace Sienna.Infrastructure.Migrations
                     b.ToTable("MEDIA_POSTS", (string)null);
                 });
 
-            modelBuilder.Entity("Sienna.Domain.Entities.Media.PostAsset", b =>
-                {
-                    b.Property<Guid>("PostId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("POST_ID");
-
-                    b.Property<Guid>("MediaId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("MEDIA_ID");
-
-                    b.Property<int>("SequenceOrder")
-                        .HasColumnType("integer")
-                        .HasColumnName("SEQUENCE_ORDER");
-
-                    b.HasKey("PostId", "MediaId");
-
-                    b.HasIndex("MediaId");
-
-                    b.ToTable("MEDIA_POST_ASSETS", (string)null);
-                });
-
             modelBuilder.Entity("Sienna.Domain.Entities.Workflow.Team", b =>
                 {
                     b.Property<Guid>("Id")
@@ -444,25 +426,6 @@ namespace Sienna.Infrastructure.Migrations
                     b.Navigation("Author");
                 });
 
-            modelBuilder.Entity("Sienna.Domain.Entities.Media.PostAsset", b =>
-                {
-                    b.HasOne("Sienna.Domain.Entities.Media.Media", "Media")
-                        .WithMany("Assets")
-                        .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Sienna.Domain.Entities.Media.Post", "Post")
-                        .WithMany("Assets")
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Media");
-
-                    b.Navigation("Post");
-                });
-
             modelBuilder.Entity("Sienna.Domain.Entities.Workflow.TeamMember", b =>
                 {
                     b.HasOne("Sienna.Domain.Entities.Identity.User", "Member")
@@ -487,16 +450,6 @@ namespace Sienna.Infrastructure.Migrations
                     b.Navigation("Posts");
 
                     b.Navigation("Teams");
-                });
-
-            modelBuilder.Entity("Sienna.Domain.Entities.Media.Media", b =>
-                {
-                    b.Navigation("Assets");
-                });
-
-            modelBuilder.Entity("Sienna.Domain.Entities.Media.Post", b =>
-                {
-                    b.Navigation("Assets");
                 });
 
             modelBuilder.Entity("Sienna.Domain.Entities.Workflow.Team", b =>
