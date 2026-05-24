@@ -2,8 +2,7 @@
 
 namespace Sienna.Domain.Abstractions.Workflow.Repositories
 {
-    public interface ITeamRepository
+    public interface ITeamRepository : IAbstractRepository<Team>
     {
-        Task AddAsync(Team team);
     }
 }

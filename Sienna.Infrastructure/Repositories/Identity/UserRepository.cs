@@ -5,18 +5,11 @@ using Sienna.Domain.Entities.Identity;
 
 namespace Sienna.Infrastructure.Repositories.Identity
 {
-    internal class UserRepository(ApplicationContext context) : IUserRepository
+    internal class UserRepository(ApplicationContext context) : AbstractRepository<User>(context), IUserRepository
     {
-        public async Task<User?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        {
-            return await context.Set<User>()
-                .Include(user => user.Teams)
-                .FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
-        }
-
         public async Task<UserTeamsDTO?> GetUserTeamsAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            return await context.Set<User>()
+            return await Context.Set<User>()
                 .Where(user => user.Id == userId)
                 .Select(user => new UserTeamsDTO
                 {

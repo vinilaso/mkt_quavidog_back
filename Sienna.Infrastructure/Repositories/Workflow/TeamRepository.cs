@@ -3,11 +3,7 @@ using Sienna.Domain.Entities.Workflow;
 
 namespace Sienna.Infrastructure.Repositories.Workflow
 {
-    internal class TeamRepository(ApplicationContext context) : ITeamRepository
+    internal class TeamRepository(ApplicationContext context) : AbstractRepository<Team>(context), ITeamRepository
     {
-        public async Task AddAsync(Team team)
-        {
-            await context.Set<Team>().AddAsync(team);
-        }
     }
 }

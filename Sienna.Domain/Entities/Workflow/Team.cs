@@ -1,8 +1,9 @@
-﻿using Sienna.Domain.Abstractions.Results;
+﻿using Sienna.Domain.Abstractions;
+using Sienna.Domain.Abstractions.Results;
 
 namespace Sienna.Domain.Entities.Workflow
 {
-    public class Team
+    public class Team : IDbEntity
     {
         private readonly List<TeamMember> _members = [];
 

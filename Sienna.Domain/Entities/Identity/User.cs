@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Sienna.Domain.Abstractions;
 using Sienna.Domain.Entities.Workflow;
 
 namespace Sienna.Domain.Entities.Identity
 {
-    public class User : IdentityUser<Guid>
+    public class User : IdentityUser<Guid>, IDbEntity
     {
         private readonly List<TeamMember> _teams = [];
 

@@ -31,6 +31,7 @@ app.UseAuthorization();
 
 app.MapIdentityEndpoints();
 app.MapWorkflowEndpoints();
+app.MapMediaEndpoints();
 
 app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
 

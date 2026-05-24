@@ -7,6 +7,7 @@ using Sienna.Application.Interfaces.Email;
 using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Identity.Repositories;
 using Sienna.Domain.Abstractions.Identity.Services;
+using Sienna.Domain.Abstractions.Media.Repositories;
 using Sienna.Domain.Abstractions.Security;
 using Sienna.Domain.Abstractions.Workflow.Repositories;
 using Sienna.Domain.Entities.Identity;
@@ -15,6 +16,7 @@ using Sienna.Infrastructure.Database;
 using Sienna.Infrastructure.Email.Queue;
 using Sienna.Infrastructure.Email.Resend;
 using Sienna.Infrastructure.Repositories.Identity;
+using Sienna.Infrastructure.Repositories.Media;
 using Sienna.Infrastructure.Repositories.Workflow;
 using Sienna.Infrastructure.Security;
 
@@ -73,6 +75,7 @@ namespace Sienna.Infrastructure
         {
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ITeamRepository, TeamRepository>();
+            services.AddScoped<IMediaRepository, MediaRepository>();
         }
     }
 }

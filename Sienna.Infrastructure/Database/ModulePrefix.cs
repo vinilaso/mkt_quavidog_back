@@ -4,6 +4,7 @@
     {
         public static readonly ModulePrefix Identity = new("IDENTITY");
         public static readonly ModulePrefix Workflow = new("WORKFLOW");
+        public static readonly ModulePrefix Media = new("MEDIA");
 
         public string Value { get; }
 
