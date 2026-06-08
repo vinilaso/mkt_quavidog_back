@@ -20,7 +20,7 @@ namespace Sienna.Application.UseCases.Identity.ResetPassword.SendToken
                 var message = new MailMessageBuilder()
                     .AddRecipient(request.Email)
                     .AddTemplate(new ResetPasswordEmailTemplate())
-                    .WithVariables(new ResetPasswordVariables(token.Value))
+                    .WithVariables(new ResetPasswordVariables(request.Email, token.Value))
                     .Build();
 
                 await queue.EnqueueAsync(message, cancellationToken);
