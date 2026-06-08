@@ -8,6 +8,13 @@
         public string Subject { get; init; } = string.Empty;
         public string? Body { get; init; }
         public bool IsHTML { get; init; } = false;
+        public MailTemplate? Template { get; set; }
+    }
+
+    public record MailTemplate
+    {
+        public string? Id { get; set; }
+        public object? Variables { get; set; }
     }
 
     public record MailAddress(

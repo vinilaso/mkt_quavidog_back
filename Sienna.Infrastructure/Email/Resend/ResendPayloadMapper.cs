@@ -11,7 +11,19 @@ namespace Sienna.Infrastructure.Email.Resend
                 To: [.. from r in message.To select r.Email],
                 Subject: message.Subject,
                 Html: message.IsHTML ? message.Body : null,
-                Text: !message.IsHTML ? message.Body : null
+                Text: !message.IsHTML ? message.Body : null,
+                MailTemplate: message.Template.MapTemplate()
+            );
+        }
+
+        private static ResendMailTemplate? MapTemplate(this MailTemplate? template)
+        {
+            if (template is null)
+                return null;
+
+            return new ResendMailTemplate(
+                Id: template.Id,
+                Variables: template.Variables
             );
         }
 

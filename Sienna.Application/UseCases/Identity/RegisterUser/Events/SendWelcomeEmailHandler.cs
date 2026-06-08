@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Sienna.Application.Builders.Email;
 using Sienna.Application.Interfaces.Email;
+using Sienna.Application.Interfaces.Email.Templates.UseCases.RegisterUser;
 
 namespace Sienna.Application.UseCases.Identity.RegisterUser.Events
 {
@@ -10,8 +11,8 @@ namespace Sienna.Application.UseCases.Identity.RegisterUser.Events
         {
             var message = new MailMessageBuilder()
                 .AddRecipient(notification.Email, notification.FullName)
-                .AddSubject("Usuário cadastrado")
-                .AddPlainBody("Seu e-mail foi registrado com sucesso.")
+                .AddTemplate(new RegisterUserMailTemplate())
+                .WithVariables(new RegisterUserTemplateVariables(notification.FullName))
                 .Build();
 
             await emailQueue.EnqueueAsync(message, cancellationToken);

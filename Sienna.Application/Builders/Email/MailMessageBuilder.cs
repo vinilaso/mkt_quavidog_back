@@ -9,6 +9,8 @@ namespace Sienna.Application.Builders.Email
         private string? _subject;
         private string? _body;
         private bool _isHtml;
+        private string? _templateId;
+        private object? _templateVariables;
 
         public MailMessageBuilder AddRecipient(MailAddress recipient)
         {
@@ -55,6 +57,20 @@ namespace Sienna.Application.Builders.Email
             return this;
         }
 
+        public MailMessageBuilder AddTemplate(string templateId, object variables)
+        {
+            _templateId = templateId;
+            _templateVariables = variables;
+
+            return this;
+        }
+
+        public TemplateMailMessageBuilder<T> AddTemplate<T>(IMailTemplate<T> template) where T : class
+        {
+            ArgumentNullException.ThrowIfNull(template, nameof(template));
+            return new TemplateMailMessageBuilder<T>(this, template);
+        }
+
         public MailMessage Build()
         {
             return new MailMessage
@@ -62,7 +78,12 @@ namespace Sienna.Application.Builders.Email
                 To = _recipients,
                 Body = _body,
                 IsHTML = _isHtml,
-                Subject = _subject ?? string.Empty
+                Subject = _subject ?? string.Empty,
+                Template = new MailTemplate
+                {
+                    Id = _templateId,
+                    Variables = _templateVariables
+                }
             };
         }
     }

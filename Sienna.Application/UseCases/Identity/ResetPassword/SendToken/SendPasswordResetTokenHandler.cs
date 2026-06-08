@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Sienna.Application.Builders.Email;
 using Sienna.Application.Interfaces.Email;
+using Sienna.Application.Interfaces.Email.Templates.UseCases.ResetPassword;
 using Sienna.Domain.Abstractions.Identity.Services;
 using Sienna.Domain.Abstractions.Results;
 
@@ -18,8 +19,8 @@ namespace Sienna.Application.UseCases.Identity.ResetPassword.SendToken
             {
                 var message = new MailMessageBuilder()
                     .AddRecipient(request.Email)
-                    .AddSubject("Token de redefinição de senha")
-                    .AddHTMLBody($"Seu token de redefinição de senha: <strong>{token.Value}</strong>")
+                    .AddTemplate(new ResetPasswordEmailTemplate())
+                    .WithVariables(new ResetPasswordVariables(token.Value))
                     .Build();
 
                 await queue.EnqueueAsync(message, cancellationToken);
