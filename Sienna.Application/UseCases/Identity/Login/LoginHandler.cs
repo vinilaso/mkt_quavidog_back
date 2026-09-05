@@ -20,7 +20,9 @@ namespace Sienna.Application.UseCases.Identity.Login
             var authenticationResult = await identityService.AuthenticateAsync(request.Email, request.Password, cancellationToken);
 
             if (authenticationResult.User is not User user)
+            {
                 return UnauthorizedError;
+            }
 
             return authenticationResult.Status switch
             {
@@ -32,8 +34,12 @@ namespace Sienna.Application.UseCases.Identity.Login
 
         private async Task<Result<string>> PublishLockedOutNotification(User user, CancellationToken cancellationToken)
         {
-            var lockoutNotification = new UserLockedOutNotification(user.Email, user.FullName);
-            await publisher.Publish(lockoutNotification, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(user.Email))
+            {
+                var lockoutNotification = new UserLockedOutNotification(user.Email, user.FullName);
+                await publisher.Publish(lockoutNotification, cancellationToken);
+            }
+            
             return UnauthorizedError;
         }
     }

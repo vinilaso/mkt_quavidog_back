@@ -6,11 +6,13 @@ namespace Sienna.Domain.Entities.Workflow
     public class Team : IDbEntity
     {
         private readonly List<TeamMember> _members = [];
+        private readonly List<Campaign> _campaigns = [];
 
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public IReadOnlyCollection<TeamMember> Members => _members.AsReadOnly();
+        public IReadOnlyCollection<Campaign> Campaigns => _campaigns.AsReadOnly();
 
         public Team(string name, Guid ownerId)
         {
