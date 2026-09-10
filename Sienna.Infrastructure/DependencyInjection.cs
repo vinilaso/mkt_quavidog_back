@@ -77,6 +77,7 @@ namespace Sienna.Infrastructure
             services.AddScoped<ITeamRepository, TeamRepository>();
             services.AddScoped<IMediaRepository, MediaRepository>();
             services.AddScoped<IPostRepository, PostRepository>();
+            services.AddScoped<ICampaignRepository, CampaignRepository>();
         }
     }
 }

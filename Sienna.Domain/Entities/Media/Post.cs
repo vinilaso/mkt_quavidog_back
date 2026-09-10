@@ -1,12 +1,14 @@
 ﻿using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Results;
 using Sienna.Domain.Entities.Identity;
+using Sienna.Domain.Entities.Workflow;
 
 namespace Sienna.Domain.Entities.Media
 {
     public class Post : IDbEntity
     {
         private readonly List<PostAsset> _assets = [];
+        private readonly List<CampaignPost> _campaigns = [];
 
         public Guid Id { get; set; }
 
@@ -18,6 +20,7 @@ namespace Sienna.Domain.Entities.Media
         public PostStatus Status { get; set; }
 
         public IReadOnlyCollection<PostAsset> Assets => _assets.AsReadOnly();
+        public IReadOnlyCollection<CampaignPost> Campaigns => _campaigns.AsReadOnly();
 
         public Post(Guid authorId, string caption)
         {

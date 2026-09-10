@@ -18,7 +18,7 @@ namespace Sienna.Application.UseCases.Workflow.CreateTeam
         {
             var team = new Team(request.TeamName, userContext.Id);
 
-            await teamRepository.AddAsync(team);
+            await teamRepository.AddAsync(team, cancellationToken);
             await uow.CommitChangesAsync(cancellationToken);
 
             await publisher.Publish(new TeamCreatedNotification(team.Name, userContext.Email), cancellationToken);
