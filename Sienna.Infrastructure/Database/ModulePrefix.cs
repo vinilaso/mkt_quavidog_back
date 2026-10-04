@@ -5,6 +5,7 @@
         public static readonly ModulePrefix Identity = new("IDENTITY");
         public static readonly ModulePrefix Workflow = new("WORKFLOW");
         public static readonly ModulePrefix Media = new("MEDIA");
+        public static readonly ModulePrefix Social = new("SOCIAL");
 
         public string Value { get; }
 

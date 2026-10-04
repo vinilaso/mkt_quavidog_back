@@ -5,5 +5,6 @@
         Task AddAsync(T entity, CancellationToken cancellationToken = default);
         Task<T?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken= default);
+        void Remove(T entity);
     }
 }

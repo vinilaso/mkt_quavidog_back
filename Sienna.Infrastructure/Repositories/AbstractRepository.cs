@@ -24,5 +24,10 @@ namespace Sienna.Infrastructure.Repositories
             return await Context.Set<T>()
                 .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
         }
+
+        public void Remove(T entity)
+        {
+            Context.Set<T>().Remove(entity);
+        }
     }
 }
