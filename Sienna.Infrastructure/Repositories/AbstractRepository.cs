@@ -9,12 +9,20 @@ namespace Sienna.Infrastructure.Repositories
 
         public virtual async Task AddAsync(T entity, CancellationToken cancellationToken = default)
         {
-            await Context.Set<T>().AddAsync(entity, cancellationToken);
+            await Context.Set<T>()
+                .AddAsync(entity, cancellationToken);
+        }
+
+        public virtual async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await Context.Set<T>()
+                .AnyAsync(entity => entity.Id == id, cancellationToken);
         }
 
         public virtual async Task<T?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await Context.Set<T>().FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+            return await Context.Set<T>()
+                .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
         }
     }
 }

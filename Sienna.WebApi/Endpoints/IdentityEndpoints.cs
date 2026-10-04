@@ -80,7 +80,11 @@ namespace Sienna.WebApi.Endpoints
                         return result.Error.CreateProblemDetails();
 
                     return TypedResults.Ok(result.Value);
-                });
+                })
+                .ProducesWithDescription<GetUserPostsResponse>(StatusCodes.Status200OK, "As postagens do usuário autenticado foram encontradas e retornadas.")
+                .ProducesProblemWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .WithDescription("Busca as postagens criadas pelo usuário autenticado, com suas mídias.")
+                .RequireAuthorization();
 
             group
                 .MapPost("users/reset-password/confirm", EndpointBodyFactory.Create<ResetPasswordCommand>(TypedResults.Ok))

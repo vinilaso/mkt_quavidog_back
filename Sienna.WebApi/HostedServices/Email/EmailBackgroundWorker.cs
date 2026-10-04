@@ -18,7 +18,13 @@ namespace Sienna.WebApi.HostedServices.Email
                     using var scope = scopeFactory.CreateScope();
                     var emailSender = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
-                    await emailSender.SendMessageAsync(email, stoppingToken);
+                    var result = await emailSender.SendMessageAsync(email, stoppingToken);
+
+                    if (result.IsFailure)
+                    {
+                        logger.LogError("Falha ao enviar o e-mail \"{Subject}\" para {To}: {Code} - {Message}",
+                            email.Subject, string.Join(", ", email.To.Select(t => t.Email)), result.Error.Code, result.Error.Message);
+                    }
                 }
                 catch (Exception e)
                 {

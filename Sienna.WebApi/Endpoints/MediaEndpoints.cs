@@ -72,7 +72,12 @@ namespace Sienna.WebApi.Endpoints
                         return result.Error.CreateProblemDetails();
 
                     return TypedResults.Ok();
-                });
+                })
+                .ProducesWithDescription(StatusCodes.Status200OK, "A mídia foi associada à postagem.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrada uma postagem com o ID informado.")
+                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "Já existe outra mídia na posição (SequenceOrder) informada.")
+                .WithDescription("Associa uma mídia já cadastrada a uma postagem, na posição indicada por SequenceOrder.");
 
             return builder;
         }
