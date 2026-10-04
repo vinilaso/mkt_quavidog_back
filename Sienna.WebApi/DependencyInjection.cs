@@ -6,6 +6,8 @@ using Scalar.AspNetCore;
 using Sienna.Application.Mappings.Identity;
 using Sienna.WebApi.HostedServices.Email;
 using Sienna.WebApi.OpenApi;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Sienna.WebApi
 {
@@ -15,12 +17,23 @@ namespace Sienna.WebApi
         {
             services.AddControllers();
             services.AddCors(AddVueAppPolicy);
+            AddJsonOptions(services);
             AddEndpointsExplorer(services);
             AddForwardedHeaders(services);
             AddHostedServices(services);
             AddApiAuthentication(services, configuration);
 
             return services;
+        }
+
+        private static void AddJsonOptions(IServiceCollection services)
+        {
+            services.ConfigureHttpJsonOptions(options =>
+            {
+                options.SerializerOptions.Converters.Add(
+                    new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false)
+                );
+            });
         }
 
         private static void AddApiAuthentication(IServiceCollection services, IConfiguration configuration)

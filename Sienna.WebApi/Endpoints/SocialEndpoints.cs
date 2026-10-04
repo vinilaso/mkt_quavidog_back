@@ -19,7 +19,7 @@ namespace Sienna.WebApi.Endpoints
                 .RequireAuthorization();
 
             group
-                .MapPut(string.Empty, async ([FromRoute]Guid teamId, [FromBody]ConfigureInstagramAccountRequest request, IMediator mediator) =>
+                .MapPut(string.Empty, async ([FromRoute] Guid teamId, [FromBody] ConfigureInstagramAccountRequest request, IMediator mediator) =>
                 {
                     var command = new ConfigureInstagramAccountCommand(teamId, request.AccessToken);
                     var result = await mediator.Send(command);
@@ -34,6 +34,7 @@ namespace Sienna.WebApi.Endpoints
                 .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
                 .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time ou não é dono/administrador dele.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrado um time com o ID informado.")
+                .ProducesProblemWithDescription(StatusCodes.Status502BadGateway, "Não foi possível se comunicar com a API da Meta. Tente novamente em instantes.")
                 .WithDescription("Conecta (ou substitui) a conta do Instagram do time a partir de um token de acesso gerado no painel da Meta. O ID e o nome da conta são obtidos automaticamente pelo token, que é armazenado cifrado e nunca é retornado pela API. Apenas o dono e os administradores do time podem configurar.");
 
             group

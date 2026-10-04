@@ -16,10 +16,12 @@ namespace Sienna.Application.UseCases.Identity.ResetPassword
 
             if (result.IsSuccess)
             {
+                var brazilTime = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "America/Sao_Paulo");
+
                 var message = new MailMessageBuilder()
                     .AddRecipient(request.Email)
                     .AddSubject("Sua senha foi alterada.")
-                    .AddPlainBody($"Sua senha foi alterada em {DateTime.Now:dd/MM/yyyy HH:mm:ss}")
+                    .AddPlainBody($"Sua senha foi alterada em {brazilTime:dd/MM/yyyy HH:mm:ss}")
                     .Build();
 
                 await emailQueue.EnqueueAsync(message, cancellationToken);

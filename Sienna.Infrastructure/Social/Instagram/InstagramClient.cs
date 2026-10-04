@@ -64,12 +64,12 @@ namespace Sienna.Infrastructure.Social.Instagram
             catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
             {
                 logger.LogError(e, "Falha ao contatar a API do Instagram.");
-                return Error.Failure("Instagram.NetworkError", "Falha de rede ao tentar contatar a API do Instagram.");
+                return Error.External("Instagram.NetworkError", "Falha de rede ao tentar contatar a API do Instagram.");
             }
             catch (JsonException e)
             {
                 logger.LogError(e, "Erro ao deserializar a resposta da API do Instagram.");
-                return Error.Failure("Json.DeserializationError", "A resposta da API do Instagram não é um JSON válido.");
+                return Error.External("Json.DeserializationError", "A resposta da API do Instagram não é um JSON válido.");
             }
         }
 

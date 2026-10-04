@@ -7,6 +7,7 @@
         NotFound,
         Conflict,
         Unauthorized,
-        Forbidden
+        Forbidden,
+        External
     }
 }
