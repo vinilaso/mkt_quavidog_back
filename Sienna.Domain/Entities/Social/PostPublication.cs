@@ -79,6 +79,9 @@ namespace Sienna.Domain.Entities.Social
                 Status = PublicationStatus.PendingApproval
             };
 
+            if (request.RequesterIsManager)
+                publication.MarkAsApproved(request.RequestedById, utcNow);
+
             return publication;
         }
 
