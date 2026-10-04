@@ -6,6 +6,12 @@ namespace Sienna.Infrastructure.Repositories.Social.Instagram
 {
     internal class InstagramAccountRepository(ApplicationContext applicationContext) : AbstractRepository<InstagramAccount>(applicationContext), IInstagramAccountRepository
     {
+        public async Task<bool> ExistsByTeamIdAsync(Guid teamId, CancellationToken cancellationToken = default)
+        {
+            return await Context.Set<InstagramAccount>()
+                .AnyAsync(account => account.TeamId == teamId, cancellationToken);
+        }
+
         public async Task<InstagramAccount?> FindByTeamIdAsync(Guid teamId, CancellationToken cancellationToken = default)
         {
             return await Context.Set<InstagramAccount>()

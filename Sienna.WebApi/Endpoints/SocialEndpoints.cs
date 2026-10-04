@@ -4,6 +4,7 @@ using Sienna.Application.UseCases.Social.Instagram;
 using Sienna.Application.UseCases.Social.Instagram.ConfigureAccount;
 using Sienna.Application.UseCases.Social.Instagram.DeleteTeamAccount;
 using Sienna.Application.UseCases.Social.Instagram.GetTeamAccount;
+using Sienna.Application.UseCases.Social.Instagram.RequestPublication;
 using Sienna.WebApi.Endpoints.Extensions;
 using Sienna.WebApi.Endpoints.Models.Social.Instagram;
 using Sienna.WebApi.Extensions;
@@ -70,6 +71,25 @@ namespace Sienna.WebApi.Endpoints
                 .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time ou não é dono/administrador dele.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou não possui uma conta do Instagram conectada.")
                 .WithDescription("Desconecta a conta do Instagram do time, excluindo o token armazenado. Publicações já feitas no Instagram não são afetadas. Apenas o dono e os administradores do time podem desconectar.");
+
+            group
+                .MapPost("publications", async ([FromRoute] Guid teamId, [FromBody] RequestPublicationRequest request, IMediator mediator) =>
+                {
+                    var command = new RequestPublicationCommand(teamId, request.PostId, request.Format, request.ScheduledFor?.UtcDateTime);
+                    var result = await mediator.Send(command);
+
+                    if (result.IsFailure)
+                        return result.Error.CreateProblemDetails();
+
+                    return TypedResults.Created($"/api/teams/{teamId}/social/instagram/publications/{result.Value.Id}", result.Value);
+                })
+                .ProducesWithDescription<PublicationResponse>(StatusCodes.Status201Created, "A publicação foi registrada. Se quem solicitou não é gestor do time, ela aguarda aprovação (status pendingApproval).")
+                .ProducesProblemWithDescription(StatusCodes.Status400BadRequest, "O time não tem conta do Instagram conectada, a quantidade de imagens não é aceita no formato, alguma imagem não é JPEG ou o horário é inválido (no passado ou a mais de 30 dias).")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time, ou não é o autor da postagem nem gestor do time.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe, ou a postagem não existe ou não está em uma campanha do time.")
+                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "A postagem já possui uma publicação pendente, agendada ou publicada neste formato.")
+                .WithDescription("Solicita a publicação de uma postagem no Instagram do time, como feed (1 imagem ou carrossel de até 10) ou stories (um por imagem, até 10). Sem scheduledFor, é publicada assim que possível. Solicitações de membros passam por aprovação de um dono ou administrador.");
 
             return builder;
         }

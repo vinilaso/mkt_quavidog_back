@@ -20,8 +20,6 @@ namespace Sienna.Application.UseCases.Social.Instagram.ExecutePublication
         IUnitOfWork uow,
         ILogger<ExecutePublicationHandler> logger) : IRequestHandler<ExecutePublicationCommand, Result<ExecutePublicationResponse>>
     {
-        private static readonly string[] SupportedExtensions = [".jpg", ".jpeg"];
-
         public async Task<Result<ExecutePublicationResponse>> Handle(ExecutePublicationCommand request, CancellationToken cancellationToken)
         {
             if (await publicationRepository.FindForPublishingAsync(request.PublicationId, cancellationToken) is not PostPublication publication)
@@ -64,7 +62,7 @@ namespace Sienna.Application.UseCases.Social.Instagram.ExecutePublication
             if (mediaIds.Count == 0)
                 return Error.Validation("Publication.NoMedia", "A postagem não possui imagens.");
 
-            var mediaValidation = await ValidateMediaAsync(mediaIds, cancellationToken);
+            var mediaValidation = await PublicationMediaRules.ValidateAsync(mediaRepository, mediaIds, cancellationToken);
 
             if (mediaValidation.IsFailure)
                 return mediaValidation.Error;
@@ -81,19 +79,6 @@ namespace Sienna.Application.UseCases.Social.Instagram.ExecutePublication
                 MediaIds = mediaIds,
                 Caption = publication.Post.Caption
             };
-        }
-
-        private async Task<Result> ValidateMediaAsync(IReadOnlyList<Guid> mediaIds, CancellationToken cancellationToken)
-        {
-            var extensions = await mediaRepository.GetExtensionsAsync(mediaIds, cancellationToken);
-
-            if (extensions.Count != mediaIds.Distinct().Count())
-                return Error.Validation("Publication.MediaNotFound", "Uma ou mais imagens da postagem não foram encontradas.");
-
-            if (extensions.Values.Any(extension => !SupportedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase)))
-                return Error.Validation("Publication.UnsupportedMedia", "O Instagram só aceita imagens JPEG (.jpg ou .jpeg).");
-
-            return Result.Success();
         }
 
         private Result<string> TryGetAccessToken(InstagramAccount account, Guid teamId)
