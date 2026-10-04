@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Sienna.Application.Interfaces;
 using Sienna.Application.Interfaces.Email;
 using Sienna.Application.Interfaces.Security;
+using Sienna.Application.Interfaces.Social.Signal;
 using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Identity.Repositories;
 using Sienna.Domain.Abstractions.Identity.Services;
@@ -25,6 +26,7 @@ using Sienna.Infrastructure.Repositories.Workflow;
 using Sienna.Infrastructure.Security;
 using Sienna.Infrastructure.Security.SecretProtection;
 using Sienna.Infrastructure.Social.Instagram;
+using Sienna.Infrastructure.Social.Publications;
 
 namespace Sienna.Infrastructure
 {
@@ -78,6 +80,7 @@ namespace Sienna.Infrastructure
             services.AddScoped<ISecretProvider, AesSecretProvider>();
 
             services.AddSingleton<IEmailQueue, InMemoryEmailQueue>(services => new InMemoryEmailQueue(500));
+            services.AddSingleton<IPublicationSignal, InMemoryPublicationSignal>();
         }
 
         private static void AddRepositories(IServiceCollection services)

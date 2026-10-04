@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Sienna.Application.Interfaces.Social.Signal;
 using Sienna.Application.Messaging.Teams;
 using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Media.Repositories;
@@ -18,6 +19,7 @@ namespace Sienna.Application.UseCases.Social.Instagram.RequestPublication
         IPostRepository postRepository,
         IPostPublicationRepository publicationRepository,
         IMediaRepository mediaRepository,
+        IPublicationSignal publicationSignal,
         IUnitOfWork uow) : IRequestHandler<RequestPublicationCommand, Result<PublicationResponse>>
     {
         public async Task<Result<PublicationResponse>> Handle(RequestPublicationCommand request, CancellationToken cancellationToken)
@@ -70,6 +72,9 @@ namespace Sienna.Application.UseCases.Social.Instagram.RequestPublication
             {
                 return DuplicatePublication();
             }
+
+            if (publication.Status is PublicationStatus.Approved)
+                publicationSignal.Notify();
 
             return PublicationResponse.From(publication);
         }

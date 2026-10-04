@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Sienna.Application.Mappings.Identity;
 using Sienna.WebApi.HostedServices.Email;
+using Sienna.WebApi.HostedServices.Publications;
 using Sienna.WebApi.OpenApi;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -20,7 +21,7 @@ namespace Sienna.WebApi
             AddJsonOptions(services);
             AddEndpointsExplorer(services);
             AddForwardedHeaders(services);
-            AddHostedServices(services);
+            AddHostedServices(services, configuration);
             AddApiAuthentication(services, configuration);
 
             return services;
@@ -109,9 +110,16 @@ namespace Sienna.WebApi
             });
         }
 
-        private static void AddHostedServices(IServiceCollection services)
+        private static void AddHostedServices(IServiceCollection services, IConfiguration configuration)
         {
             services.AddHostedService<EmailBackgroundWorker>();
+
+            services.AddOptions<PublicationWorkerSettings>()
+                .Bind(configuration.GetSection(nameof(PublicationWorkerSettings)))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+            services.AddHostedService<PublicationBackgroundWorker>();
         }
     }
 }
