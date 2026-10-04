@@ -19,6 +19,7 @@ using Sienna.Infrastructure.Email.Queue;
 using Sienna.Infrastructure.Email.Resend;
 using Sienna.Infrastructure.Repositories.Identity;
 using Sienna.Infrastructure.Repositories.Media;
+using Sienna.Infrastructure.Repositories.Social;
 using Sienna.Infrastructure.Repositories.Social.Instagram;
 using Sienna.Infrastructure.Repositories.Workflow;
 using Sienna.Infrastructure.Security;
@@ -87,6 +88,7 @@ namespace Sienna.Infrastructure
             services.AddScoped<IPostRepository, PostRepository>();
             services.AddScoped<ICampaignRepository, CampaignRepository>();
             services.AddScoped<IInstagramAccountRepository, InstagramAccountRepository>();
+            services.AddScoped<IPostPublicationRepository, PostPublicationRepository>();
         }
 
         private static void AddSecurity(IServiceCollection services, IConfiguration configuration)
