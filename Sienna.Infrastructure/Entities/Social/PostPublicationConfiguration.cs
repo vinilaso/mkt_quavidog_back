@@ -9,7 +9,6 @@ namespace Sienna.Infrastructure.Entities.Social
     internal sealed class PostPublicationConfiguration : BaseEntityConfiguration<PostPublication>
     {
         private const int EnumMaxLength = 32;
-        private const int FailureReasonMaxLength = 2000;
 
         protected override ModulePrefix Module => ModulePrefix.Social;
 
@@ -44,7 +43,7 @@ namespace Sienna.Infrastructure.Entities.Social
                 .HasMaxLength(PostPublication.MaxRejectionReasonLength);
 
             builder.Property(publication => publication.FailureReason)
-                .HasMaxLength(FailureReasonMaxLength);
+                .HasMaxLength(PostPublication.MaxFailureReasonLength);
 
             builder.Property(publication => publication.ExternalIds)
                 .IsRequired();

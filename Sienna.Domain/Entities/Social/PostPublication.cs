@@ -10,6 +10,7 @@ namespace Sienna.Domain.Entities.Social
         public const int MaxFeedMedia = 10;
         public const int MaxStoryMedia = 10;
         public const int MaxRejectionReasonLength = 500;
+        public const int MaxFailureReasonLength = 2000;
 
         public static readonly TimeSpan MaxScheduleAhead = TimeSpan.FromDays(30);
         private static readonly TimeSpan PastTolerance = TimeSpan.FromMinutes(1);
@@ -178,6 +179,21 @@ namespace Sienna.Domain.Entities.Social
             ExternalIds = [.. externalIds];
             PublishedAt = utcNow;
             FailureReason = null;
+
+            return Result.Success();
+        }
+
+        public Result MarkAsFailed(string reason)
+        {
+            if (Status is not PublicationStatus.Publishing)
+                return InvalidTransition("registrar falha de");
+
+            reason = string.IsNullOrWhiteSpace(reason) ? "Falha desconhecida ao publicar." : reason;
+
+            Status = PublicationStatus.Failed;
+            FailureReason = reason.Length > MaxFailureReasonLength
+                ? reason[..MaxFailureReasonLength]
+                : reason;
 
             return Result.Success();
         }
