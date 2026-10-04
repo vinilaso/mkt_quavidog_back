@@ -7,9 +7,10 @@ using Sienna.Domain.Entities.Workflow;
 
 namespace Sienna.Application.Behaviors.Teams
 {
-    public sealed class TeamAuthorizationBehavior<TRequest, TResponse>(
+    internal sealed class TeamAuthorizationBehavior<TRequest, TResponse>(
         IUserContext userContext,
-        ITeamRepository teamRepository) : IPipelineBehavior<TRequest, TResponse>
+        ITeamRepository teamRepository,
+        TeamAccessContext teamAccessContext) : IPipelineBehavior<TRequest, TResponse>
         where TRequest : notnull
     {
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
@@ -43,6 +44,7 @@ namespace Sienna.Application.Behaviors.Teams
                 return ResultFailureFactory<TResponse>.Create(forbidden);
             }
 
+            teamAccessContext.Set(access.TeamId, access.Role.Value);
             return await next(cancellationToken);
         }
     }
