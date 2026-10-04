@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Sienna.Application.UseCases.Media.AddPostAsset;
 using Sienna.Application.UseCases.Media.GetMedia;
 using Sienna.Application.UseCases.Media.RegisterMedia;
@@ -13,9 +14,29 @@ namespace Sienna.WebApi.Endpoints
 {
     public static class MediaEndpoints
     {
+        private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new();
+
         public static IEndpointRouteBuilder MapMediaEndpoints(this IEndpointRouteBuilder builder)
         {
             var group = builder.MapGroup("api/media").WithTags("Media").RequireAuthorization();
+
+            group
+                .MapGet("public/{id:guid}", async ([FromRoute] Guid id, IMediator mediator) =>
+                {
+                    var result = await mediator.Send(new GetMediaQuery(id));
+
+                    if (result.IsFailure)
+                        return result.Error.CreateProblemDetails();
+
+                    if (!ContentTypeProvider.TryGetContentType(result.Value.FileName, out var contentType))
+                        contentType = "application/octet-stream";
+
+                    return TypedResults.File(result.Value.Content, contentType);
+                })
+                .AllowAnonymous()
+                .ProducesWithDescription<FileContentHttpResult>(StatusCodes.Status200OK, "A imagem foi encontrada e retornada para exibição.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrada mídia cadastrada com o ID informado.")
+                .WithDescription("Retorna uma mídia sem exigir autenticação. Usada pela Meta para baixar as imagens das publicações no Instagram.");
 
             group
                 .MapPost("files", async(IFormFile file, IMediator mediator) =>
