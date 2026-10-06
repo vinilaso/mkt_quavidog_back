@@ -11,6 +11,7 @@ using Sienna.Domain.Abstractions.Security;
 using Sienna.WebApi.Contracts.Identity;
 using Sienna.WebApi.Endpoints.Extensions;
 using Sienna.WebApi.Extensions;
+using Sienna.WebApi.OpenApi;
 
 namespace Sienna.WebApi.Endpoints
 {
@@ -18,10 +19,12 @@ namespace Sienna.WebApi.Endpoints
     {
         public static IEndpointRouteBuilder MapIdentityEndpoints(this IEndpointRouteBuilder builder)
         {
-            var group = builder.MapGroup("api/identity").WithTags("Identity");
+            var group = builder.MapGroup("api/identity").WithTags(ApiTags.Identity);
 
             group
                 .MapPost("users", EndpointBodyFactory.Create<RegisterUserCommand, Guid>(guid => TypedResults.Created("users/me", guid)))
+                .WithName("RegisterUser")
+                .WithSummary("Cadastrar usuário")
                 .ProducesWithDescription<Guid>(StatusCodes.Status201Created, "O usuário foi criado com sucesso no banco de dados.")
                 .ProducesProblemWithDescription(StatusCodes.Status400BadRequest, "Falha de validação nos parâmetros de entrada.")
                 .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "O e-mail já foi registrado anteriormente.")
@@ -41,6 +44,8 @@ namespace Sienna.WebApi.Endpoints
 
                     return TypedResults.Ok(result.Value);
                 })
+                .WithName("GetCurrentUser")
+                .WithSummary("Consultar perfil do usuário autenticado")
                 .ProducesWithDescription<UserProfileResponse>(StatusCodes.Status200OK, "As informações do usuário autenticado foram encontradas e retornadas.")
                 .ProducesProblemWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O ID do usuário autenticado não foi encontrado no servidor.")
@@ -61,6 +66,8 @@ namespace Sienna.WebApi.Endpoints
 
                     return TypedResults.Ok(result.Value);
                 })
+                .WithName("GetCurrentUserTeams")
+                .WithSummary("Listar times do usuário autenticado")
                 .ProducesWithDescription<UserTeamsDTO>(StatusCodes.Status200OK, "Os times do usuário autenticado foram encontrados e retornados.")
                 .ProducesProblemWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O ID do usuário autenticado não foi encontrado no servidor.")
@@ -81,6 +88,8 @@ namespace Sienna.WebApi.Endpoints
 
                     return TypedResults.Ok(result.Value);
                 })
+                .WithName("GetCurrentUserPosts")
+                .WithSummary("Listar postagens do usuário autenticado")
                 .ProducesWithDescription<GetUserPostsResponse>(StatusCodes.Status200OK, "As postagens do usuário autenticado foram encontradas e retornadas.")
                 .ProducesProblemWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
                 .WithDescription("Busca as postagens criadas pelo usuário autenticado, com suas mídias.")
@@ -88,6 +97,8 @@ namespace Sienna.WebApi.Endpoints
 
             group
                 .MapPost("users/reset-password/confirm", EndpointBodyFactory.Create<ResetPasswordCommand>(TypedResults.Ok))
+                .WithName("ResetPassword")
+                .WithSummary("Redefinir senha")
                 .ProducesWithDescription(StatusCodes.Status200OK, "A senha foi alterada com sucesso.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrado usuário com o e-mail informado.")
                 .ProducesProblemWithDescription(StatusCodes.Status400BadRequest, "Os parâmetros de entrada estavam inválidos.")
@@ -95,12 +106,16 @@ namespace Sienna.WebApi.Endpoints
 
             group
                 .MapPost("tokens/login", EndpointBodyFactory.Create<LoginCommand, string>(token => TypedResults.Ok(new LoginResponse(token))))
+                .WithName("Login")
+                .WithSummary("Autenticar usuário (login)")
                 .ProducesWithDescription<LoginResponse>(StatusCodes.Status200OK, "O usuário com e-mail e senha informados foi encontrado e o token JWT foi gerado.")
                 .ProducesProblemWithDescription(StatusCodes.Status401Unauthorized, "Não foi encontrado usuário com e-mail e senha informados, ou o usuário está bloqueado.")
                 .WithDescription("Gera um token JWT que pode ser utilizado como forma de autenticação.");
 
             group
                 .MapPost("tokens/reset-password", EndpointBodyFactory.Create<SendPassowordResetTokenCommand>(TypedResults.Ok))
+                .WithName("SendPasswordResetToken")
+                .WithSummary("Solicitar redefinição de senha")
                 .ProducesWithDescription(StatusCodes.Status200OK, "O email com o token de redefinição de senha foi enviado com sucesso.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrado usuário com o e-mail informado.")
                 .ProducesProblemWithDescription(StatusCodes.Status500InternalServerError, "Não foi possível gerar o token de redefinição de senha por algum motivo.")

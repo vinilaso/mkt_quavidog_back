@@ -85,7 +85,9 @@ namespace Sienna.WebApi
         {
             services.AddOpenApi(options =>
             {
+                options.AddDocumentTransformer<ApiInfoDocumentTransformer>();
                 options.AddDocumentTransformer<BearerSecuritySchemeDocumentTransformer>();
+                options.AddDocumentTransformer<TagDescriptionsDocumentTransformer>();
                 options.AddOperationTransformer<BearerSecurityRequirementOperationTransformer>();
             });
         }

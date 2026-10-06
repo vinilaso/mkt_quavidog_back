@@ -8,6 +8,8 @@ using Sienna.Application.UseCases.Media.RegisterMedia;
 using Sienna.Application.UseCases.Media.RegisterPost;
 using Sienna.WebApi.Endpoints.Extensions;
 using Sienna.WebApi.Extensions;
+using Sienna.WebApi.OpenApi;
+using System.ComponentModel;
 
 namespace Sienna.WebApi.Endpoints
 {
@@ -17,10 +19,10 @@ namespace Sienna.WebApi.Endpoints
 
         public static IEndpointRouteBuilder MapMediaEndpoints(this IEndpointRouteBuilder builder)
         {
-            var group = builder.MapGroup("api/media").WithTags("Media").RequireAuthorization();
+            var group = builder.MapGroup("api/media").WithTags(ApiTags.Media).RequireAuthorization();
 
             group
-                .MapGet("public/{id:guid}", async ([FromRoute] Guid id, IMediator mediator) =>
+                .MapGet("public/{id:guid}", async ([FromRoute, Description("ID da mídia.")] Guid id, IMediator mediator) =>
                 {
                     var result = await mediator.Send(new GetMediaQuery(id));
 
@@ -33,6 +35,8 @@ namespace Sienna.WebApi.Endpoints
                     return TypedResults.File(result.Value.Content, contentType);
                 })
                 .AllowAnonymous()
+                .WithName("GetPublicMedia")
+                .WithSummary("Consultar mídia pública")
                 .ProducesWithDescription<FileContentHttpResult>(StatusCodes.Status200OK, "A imagem foi encontrada e retornada para exibição.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrada mídia cadastrada com o ID informado.")
                 .WithDescription("Retorna uma mídia sem exigir autenticação. Usada pela Meta para baixar as imagens das publicações no Instagram.");
@@ -51,13 +55,15 @@ namespace Sienna.WebApi.Endpoints
 
                     return TypedResults.Created($"media/{result.Value}", result.Value);
                 })
+                .WithName("UploadMedia")
+                .WithSummary("Enviar mídia")
                 .ProducesWithDescription<Guid>(StatusCodes.Status201Created, "A mídia foi criada com sucesso no servidor.")
                 .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
                 .WithDescription("Cadastra uma mídia no sistema.")
                 .DisableAntiforgery();
 
             group
-                .MapGet("files/{id:guid}", async ([FromRoute]Guid id, IMediator mediator) =>
+                .MapGet("files/{id:guid}", async ([FromRoute, Description("ID da mídia.")] Guid id, IMediator mediator) =>
                 {
                     var query = new GetMediaQuery(id);
                     var result = await mediator.Send(query);
@@ -70,6 +76,8 @@ namespace Sienna.WebApi.Endpoints
                         fileDownloadName: result.Value.FileName
                     );
                 })
+                .WithName("DownloadMedia")
+                .WithSummary("Baixar mídia")
                 .ProducesWithDescription<FileContentHttpResult>(StatusCodes.Status200OK, "A mídia foi encontrada e retornada para download.")
                 .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrada mídia cadastrada com o ID informado.")
@@ -78,12 +86,14 @@ namespace Sienna.WebApi.Endpoints
 
             group
                 .MapPost("posts", EndpointBodyFactory.Create<RegisterPostCommand, Guid>(guid => TypedResults.Created($"api/media/posts/{guid}", guid)))
+                .WithName("CreatePost")
+                .WithSummary("Cadastrar postagem")
                 .ProducesWithDescription<Guid>(StatusCodes.Status201Created, "A postagem foi criada com sucesso.")
                 .ProducesProblemWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado")
                 .WithDescription("Cadastra uma postagem no sistema.");
 
             group
-                .MapPost("posts/{postId:guid}/assets", async ([FromRoute] Guid postId, IFormFile file, [FromForm] int sequenceOrder, IMediator mediator) =>
+                .MapPost("posts/{postId:guid}/assets", async ([FromRoute, Description("ID da postagem.")] Guid postId, [Description("Imagem JPEG (.jpg ou .jpeg) de até 8 MB.")] IFormFile file, [FromForm, Description("Posição da imagem na postagem (1 = primeira). Define a ordem no carrossel ou nos stories.")] int sequenceOrder, IMediator mediator) =>
                 {
                     await using var content = file.OpenReadStream();
 
@@ -101,6 +111,8 @@ namespace Sienna.WebApi.Endpoints
 
                     return TypedResults.Created($"/api/media/files/{result.Value}", result.Value);
                 })
+                .WithName("AddPostAsset")
+                .WithSummary("Adicionar imagem à postagem")
                 .ProducesWithDescription<Guid>(StatusCodes.Status201Created, "A imagem foi cadastrada e associada à postagem. Retorna o ID da mídia criada.")
                 .ProducesProblemWithDescription(StatusCodes.Status400BadRequest, "O arquivo não foi enviado, está vazio, não é JPEG (.jpg ou .jpeg) ou tem mais de 8 MB.")
                 .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
