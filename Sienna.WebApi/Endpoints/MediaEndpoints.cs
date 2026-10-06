@@ -7,7 +7,6 @@ using Sienna.Application.UseCases.Media.GetMedia;
 using Sienna.Application.UseCases.Media.RegisterMedia;
 using Sienna.Application.UseCases.Media.RegisterPost;
 using Sienna.WebApi.Endpoints.Extensions;
-using Sienna.WebApi.Endpoints.Models.Media;
 using Sienna.WebApi.Extensions;
 
 namespace Sienna.WebApi.Endpoints
@@ -84,21 +83,31 @@ namespace Sienna.WebApi.Endpoints
                 .WithDescription("Cadastra uma postagem no sistema.");
 
             group
-                .MapPost("posts/{postId:guid}/assets", async ([FromRoute]Guid postId, AddPostAssetRequest request, IMediator mediator) =>
+                .MapPost("posts/{postId:guid}/assets", async ([FromRoute] Guid postId, IFormFile file, [FromForm] int sequenceOrder, IMediator mediator) =>
                 {
-                    var command = new AddPostAssetCommand(postId, request.MediaId, request.SequenceOrder);
+                    await using var content = file.OpenReadStream();
+
+                    var command = new AddPostAssetCommand(
+                        PostId: postId,
+                        FileName: Path.GetFileNameWithoutExtension(file.FileName),
+                        Extension: Path.GetExtension(file.FileName),
+                        Content: content,
+                        SequenceOrder: sequenceOrder);
+
                     var result = await mediator.Send(command);
 
                     if (result.IsFailure)
                         return result.Error.CreateProblemDetails();
 
-                    return TypedResults.Ok();
+                    return TypedResults.Created($"/api/media/files/{result.Value}", result.Value);
                 })
-                .ProducesWithDescription(StatusCodes.Status200OK, "A mídia foi associada à postagem.")
+                .ProducesWithDescription<Guid>(StatusCodes.Status201Created, "A imagem foi cadastrada e associada à postagem. Retorna o ID da mídia criada.")
+                .ProducesProblemWithDescription(StatusCodes.Status400BadRequest, "O arquivo não foi enviado, está vazio, não é JPEG (.jpg ou .jpeg) ou tem mais de 8 MB.")
                 .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrada uma postagem com o ID informado.")
-                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "Já existe outra mídia na posição (SequenceOrder) informada.")
-                .WithDescription("Associa uma mídia já cadastrada a uma postagem, na posição indicada por SequenceOrder.");
+                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "Já existe outra mídia na posição (sequenceOrder) informada.")
+                .WithDescription("Envia uma imagem (multipart/form-data, campos file e sequenceOrder) e a associa à postagem na posição indicada. A imagem só é gravada se a associação for possível.")
+                .DisableAntiforgery();
 
             return builder;
         }
