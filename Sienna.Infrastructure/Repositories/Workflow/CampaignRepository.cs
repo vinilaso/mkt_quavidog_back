@@ -7,10 +7,10 @@ namespace Sienna.Infrastructure.Repositories.Workflow
 {
     internal class CampaignRepository(ApplicationContext context) : AbstractRepository<Campaign>(context), ICampaignRepository
     {
-        public async Task<CampaignPostsDTO?> GetCampaignPostsAsync(Guid campaignId, CancellationToken cancellationToken = default)
+        public async Task<CampaignPostsDTO?> GetCampaignPostsAsync(Guid teamId, Guid campaignId, CancellationToken cancellationToken = default)
         {
             return await Context.Set<Campaign>()
-                .Where(campaign => campaign.Id == campaignId)
+                .Where(campaign => campaign.Id == campaignId && campaign.TeamId == teamId)
                 .Select(campaign => new CampaignPostsDTO
                 {
                     CampaignId = campaign.Id,

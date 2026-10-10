@@ -5,6 +5,6 @@ namespace Sienna.Domain.Abstractions.Workflow.Repositories
 {
     public interface ICampaignRepository : IAbstractRepository<Campaign>
     {
-        Task<CampaignPostsDTO?> GetCampaignPostsAsync(Guid campaignId, CancellationToken cancellationToken = default);
+        Task<CampaignPostsDTO?> GetCampaignPostsAsync(Guid teamId, Guid campaignId, CancellationToken cancellationToken = default);
     }
 }

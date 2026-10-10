@@ -2,6 +2,7 @@
 using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Media.Repositories;
 using Sienna.Domain.Abstractions.Results;
+using Sienna.Domain.Abstractions.Security;
 using Sienna.Domain.Entities.Media;
 using MediaEntity = Sienna.Domain.Entities.Media.Media;
 
@@ -10,6 +11,7 @@ namespace Sienna.Application.UseCases.Media.AddPostAsset
     internal sealed class AddPostAssetHandler(
         IPostRepository postRepository,
         IMediaRepository mediaRepository,
+        IUserContext userContext,
         IUnitOfWork uow) : IRequestHandler<AddPostAssetCommand, Result<Guid>>
     {
         private const long MaxFileSizeBytes = 8 * 1024 * 1024;
@@ -23,7 +25,7 @@ namespace Sienna.Application.UseCases.Media.AddPostAsset
             if (request.Content.CanSeek && request.Content.Length > MaxFileSizeBytes)
                 return FileTooLarge();
 
-            if (await postRepository.FindByIdAsync(request.PostId, cancellationToken) is not Post post)
+            if (await postRepository.FindByIdAsync(request.PostId, cancellationToken) is not Post post || post.AuthorId != userContext.Id)
                 return Error.NotFound("Post.NotFound", $"Não foi encontrada uma postagem no servidor com o ID {request.PostId}.");
 
             using var memoryStream = new MemoryStream();

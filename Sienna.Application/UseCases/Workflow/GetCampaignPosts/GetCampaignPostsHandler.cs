@@ -9,7 +9,7 @@ namespace Sienna.Application.UseCases.Workflow.GetCampaignPosts
     {
         public async Task<Result<CampaignPostsDTO>> Handle(GetCampaignPostsQuery request, CancellationToken cancellationToken)
         {
-            var result = await campaignRepository.GetCampaignPostsAsync(request.CampaignId, cancellationToken);
+            var result = await campaignRepository.GetCampaignPostsAsync(request.TeamId, request.CampaignId, cancellationToken);
 
             if (result is null)
                 return Error.NotFound("Campaign.NotFound", $"Não existe campanha com o ID informado.");
