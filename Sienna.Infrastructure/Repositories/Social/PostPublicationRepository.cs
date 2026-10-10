@@ -56,6 +56,12 @@ namespace Sienna.Infrastructure.Repositories.Social
                 .FirstOrDefaultAsync(publication => publication.Id == publicationId, cancellationToken);
         }
 
+        public async Task<PostPublication?> FindTeamPublicationByIdAsync(Guid teamId, Guid publicationId, CancellationToken cancellationToken = default)
+        {
+            return await Context.Set<PostPublication>()
+                .FirstOrDefaultAsync(publication => publication.TeamId == teamId && publication.Id == publicationId, cancellationToken);
+        }
+
         public async Task<bool> HasBlockingPublicationAsync(Guid postId, PublicationFormat format, CancellationToken cancellationToken = default)
         {
             return await Context.Set<PostPublication>()

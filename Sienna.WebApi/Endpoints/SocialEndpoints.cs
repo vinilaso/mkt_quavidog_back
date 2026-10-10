@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Sienna.Application.UseCases.Social.Instagram;
+using Sienna.Application.UseCases.Social.Instagram.ApprovePublication;
 using Sienna.Application.UseCases.Social.Instagram.DeleteTeamAccount;
 using Sienna.Application.UseCases.Social.Instagram.GetTeamAccount;
 using Sienna.WebApi.Endpoints.Extensions;
@@ -62,6 +63,29 @@ namespace Sienna.WebApi.Endpoints
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe, ou a postagem não existe ou não está em uma campanha do time.")
                 .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "A postagem já possui uma publicação pendente, agendada ou publicada neste formato.")
                 .WithDescription("Solicita a publicação de uma postagem no Instagram do time, como feed (1 imagem ou carrossel de até 10) ou stories (um por imagem, até 10). Sem scheduledFor, é publicada assim que possível. Solicitações de membros passam por aprovação de um dono ou administrador.");
+
+            group
+                .MapPost("publications/{publicationId:guid}/approve", ApprovePublication)
+                .WithName("ApprovePublication")
+                .WithSummary("Aprovar publicação")
+                .ProducesWithDescription<PublicationResponse>(StatusCodes.Status200OK, "A publicação foi aprovada. Ela sai no horário agendado, ou assim que possível se o horário já passou.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time ou não é dono/administrador dele.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou a publicação não pertence ao time.")
+                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "A publicação não está aguardando aprovação (já foi aprovada, reprovada, cancelada ou publicada).")
+                .WithDescription("Aprova uma publicação solicitada por um membro do time. Apenas o dono e os administradores do time podem aprovar.");
+
+            group
+                .MapPost("publications/{publicationId:guid}/reject", RejectPublication)
+                .WithName("RejectPublication")
+                .WithSummary("Reprovar publicação")
+                .ProducesWithDescription<PublicationResponse>(StatusCodes.Status200OK, "A publicação foi reprovada e não será publicada.")
+                .ProducesProblemWithDescription(StatusCodes.Status400BadRequest, "O motivo não foi informado ou tem mais de 500 caracteres.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time ou não é dono/administrador dele.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou a publicação não pertence ao time.")
+                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "A publicação não está aguardando aprovação (já foi aprovada, reprovada, cancelada ou publicada).")
+                .WithDescription("Reprova uma publicação solicitada por um membro do time, informando o motivo. Apenas o dono e os administradores do time podem reprovar. Uma publicação reprovada não impede uma nova solicitação da mesma postagem.");
         }
 
         private static async Task<IResult> ConfigureInstagramAccount([FromRoute, Description("ID do time.")] Guid teamId, [FromBody] ConfigureInstagramAccountRequest request, IMediator mediator, CancellationToken cancellationToken)
@@ -100,6 +124,34 @@ namespace Sienna.WebApi.Endpoints
             return result.ToHttpResult(response => TypedResults.CreatedAtRoute(
                 value: response
             ));
+        }
+
+        private static async Task<IResult> ApprovePublication(
+            [FromRoute, Description("ID do time.")] Guid teamId,
+            [FromRoute, Description("ID da publicação.")] Guid publicationId,
+            IMediator mediator,
+            CancellationToken cancellationToken)
+        {
+            var command = new ApprovePublicationCommand(teamId, publicationId);
+            var result = await mediator.Send(command, cancellationToken);
+
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> RejectPublication(
+            [FromRoute, Description("ID do time.")] Guid teamId,
+            [FromRoute, Description("ID da publicação.")] Guid publicationId,
+            [FromBody] RejectPublicationRequest request,
+            IMediator mediator,
+            CancellationToken cancellationToken)
+        {
+            var result = await mediator.Send(request.ToCommand(teamId, publicationId), cancellationToken);
+
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
         }
     }
 }
