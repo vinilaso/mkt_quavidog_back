@@ -29,7 +29,10 @@ namespace Sienna.Infrastructure.Repositories.Social
             {
                 var affected = await Context.Set<PostPublication>()
                     .Where(publication => publication.Id == id && publication.Status == PublicationStatus.Approved)
-                    .ExecuteUpdateAsync(setters => setters.SetProperty(publication => publication.Status, PublicationStatus.Publishing), cancellationToken);
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(publication => publication.Status, PublicationStatus.Publishing)
+                        .SetProperty(publication => publication.ConcurrencyStamp, Guid.NewGuid()), 
+                        cancellationToken);
 
                 if (affected == 1)
                     claimed.Add(id);
@@ -44,7 +47,8 @@ namespace Sienna.Infrastructure.Repositories.Social
                 .Where(publication => publication.Status == PublicationStatus.Publishing)
                 .ExecuteUpdateAsync(setters => setters
                     .SetProperty(publication => publication.Status, PublicationStatus.Failed)
-                    .SetProperty(publication => publication.FailureReason, reason), 
+                    .SetProperty(publication => publication.FailureReason, reason)
+                    .SetProperty(publication => publication.ConcurrencyStamp, Guid.NewGuid()), 
                     cancellationToken);
         }
 

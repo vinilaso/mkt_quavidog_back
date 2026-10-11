@@ -387,6 +387,11 @@ namespace Sienna.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("ID");
 
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("CONCURRENCY_STAMP");
+
                     b.PrimitiveCollection<string[]>("ExternalIds")
                         .IsRequired()
                         .HasColumnType("text[]")

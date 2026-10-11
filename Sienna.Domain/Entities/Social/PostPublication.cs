@@ -5,7 +5,7 @@ using Sienna.Domain.Entities.Workflow;
 
 namespace Sienna.Domain.Entities.Social
 {
-    public class PostPublication : IDbEntity
+    public class PostPublication : IDbEntity, IConcurrencyStamped
     {
         public const int MaxFeedMedia = 10;
         public const int MaxStoryMedia = 10;
@@ -40,6 +40,8 @@ namespace Sienna.Domain.Entities.Social
         public string[] ExternalIds { get; private set; } = [];
         public string? FailureReason { get; private set; }
 
+        public Guid ConcurrencyStamp { get; private set; }
+
         public bool BlocksNewRequests =>
             Status is PublicationStatus.PendingApproval
                 or PublicationStatus.Approved
@@ -48,6 +50,7 @@ namespace Sienna.Domain.Entities.Social
 
         protected PostPublication()
         {
+            RenewConcurrencyStamp();
         }
 
         #region Solicitação
@@ -211,6 +214,11 @@ namespace Sienna.Domain.Entities.Social
             FailureReason = null;
 
             return Result.Success();
+        }
+
+        public void RenewConcurrencyStamp()
+        {
+            ConcurrencyStamp = Guid.NewGuid();
         }
 
         #endregion

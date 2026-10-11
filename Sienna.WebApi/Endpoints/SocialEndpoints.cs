@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Sienna.Application.UseCases.Social.Instagram;
 using Sienna.Application.UseCases.Social.Instagram.ApprovePublication;
+using Sienna.Application.UseCases.Social.Instagram.CancelPublication;
 using Sienna.Application.UseCases.Social.Instagram.DeleteTeamAccount;
 using Sienna.Application.UseCases.Social.Instagram.GetTeamAccount;
 using Sienna.WebApi.Endpoints.Extensions;
@@ -86,6 +87,29 @@ namespace Sienna.WebApi.Endpoints
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou a publicação não pertence ao time.")
                 .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "A publicação não está aguardando aprovação (já foi aprovada, reprovada, cancelada ou publicada).")
                 .WithDescription("Reprova uma publicação solicitada por um membro do time, informando o motivo. Apenas o dono e os administradores do time podem reprovar. Uma publicação reprovada não impede uma nova solicitação da mesma postagem.");
+
+            group
+                .MapPost("publications/{publicationId:guid}/cancel", CancelPublication)
+                .WithName("CancelPublication")
+                .WithSummary("Cancelar publicação")
+                .ProducesWithDescription<PublicationResponse>(StatusCodes.Status200OK, "A publicação foi cancelada e não será enviada ao Instagram.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time, ou não solicitou a publicação nem é gestor do time.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou a publicação não pertence ao time.")
+                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "A publicação não está pendente nem agendada, ou foi alterada por outra operação (ex.: começou a ser enviada).")
+                .WithDescription("Cancela uma publicação pendente de aprovação ou agendada. Quem solicitou e os gestores do time podem cancelar. Publicações em envio ou já publicadas não podem ser canceladas.");
+
+            group
+                .MapPost("publications/{publicationId:guid}/reschedule", ReschedulePublication)
+                .WithName("ReschedulePublication")
+                .WithSummary("Reagendar publicação")
+                .ProducesWithDescription<PublicationResponse>(StatusCodes.Status200OK, "O horário foi alterado. Se um membro reagendou uma publicação aprovada, ela volta a aguardar aprovação.")
+                .ProducesProblemWithDescription(StatusCodes.Status400BadRequest, "O horário está no passado ou a mais de 30 dias.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time, ou não solicitou a publicação nem é gestor do time.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou a publicação não pertence ao time.")
+                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "A publicação não está pendente nem agendada, ou foi alterada por outra operação (ex.: começou a ser enviada).")
+                .WithDescription("Altera o horário de uma publicação pendente de aprovação ou agendada. Quem solicitou e os gestores do time podem reagendar. Quando um membro reagenda uma publicação já aprovada, ela volta a aguardar aprovação, porque o gestor aprovou o horário anterior.");
         }
 
         private static async Task<IResult> ConfigureInstagramAccount([FromRoute, Description("ID do time.")] Guid teamId, [FromBody] ConfigureInstagramAccountRequest request, IMediator mediator, CancellationToken cancellationToken)
@@ -144,6 +168,33 @@ namespace Sienna.WebApi.Endpoints
             [FromRoute, Description("ID do time.")] Guid teamId,
             [FromRoute, Description("ID da publicação.")] Guid publicationId,
             [FromBody] RejectPublicationRequest request,
+            IMediator mediator,
+            CancellationToken cancellationToken)
+        {
+            var result = await mediator.Send(request.ToCommand(teamId, publicationId), cancellationToken);
+
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> CancelPublication(
+            [FromRoute, Description("ID do time.")] Guid teamId, 
+            [FromRoute, Description("ID da publicação.")] Guid publicationId,
+            IMediator mediator,
+            CancellationToken cancellationToken)
+        {
+            var result = await mediator.Send(new CancelPublicationCommand(teamId, publicationId), cancellationToken);
+
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> ReschedulePublication(
+            [FromRoute, Description("ID do time.")] Guid teamId,
+            [FromRoute, Description("ID da publicação.")] Guid publicationId,
+            [FromBody] ReschedulePublicationRequest request,
             IMediator mediator,
             CancellationToken cancellationToken)
         {

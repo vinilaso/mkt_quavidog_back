@@ -48,6 +48,10 @@ namespace Sienna.Infrastructure.Entities.Social
             builder.Property(publication => publication.ExternalIds)
                 .IsRequired();
 
+            builder.Property(publication => publication.ConcurrencyStamp)
+                .IsConcurrencyToken()
+                .IsRequired();
+
             #region Relacionamentos
 
             builder.HasOne(publication => publication.Post)
