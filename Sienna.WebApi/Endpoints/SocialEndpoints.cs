@@ -4,8 +4,13 @@ using Sienna.Application.UseCases.Social.Instagram;
 using Sienna.Application.UseCases.Social.Instagram.ApprovePublication;
 using Sienna.Application.UseCases.Social.Instagram.CancelPublication;
 using Sienna.Application.UseCases.Social.Instagram.DeleteTeamAccount;
+using Sienna.Application.UseCases.Social.Instagram.GetPublication;
 using Sienna.Application.UseCases.Social.Instagram.GetTeamAccount;
+using Sienna.Application.UseCases.Social.Instagram.SearchPublication;
+using Sienna.Domain.Abstractions.Pagination;
+using Sienna.Domain.Abstractions.Social.DTOs;
 using Sienna.WebApi.Endpoints.Extensions;
+using Sienna.WebApi.Endpoints.Models.Pagination;
 using Sienna.WebApi.Endpoints.Models.Social.Instagram;
 using Sienna.WebApi.Extensions;
 using Sienna.WebApi.OpenApi;
@@ -110,6 +115,27 @@ namespace Sienna.WebApi.Endpoints
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou a publicação não pertence ao time.")
                 .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "A publicação não está pendente nem agendada, ou foi alterada por outra operação (ex.: começou a ser enviada).")
                 .WithDescription("Altera o horário de uma publicação pendente de aprovação ou agendada. Quem solicitou e os gestores do time podem reagendar. Quando um membro reagenda uma publicação já aprovada, ela volta a aguardar aprovação, porque o gestor aprovou o horário anterior.");
+
+            group
+                .MapGet("publications", SearchPublications)
+                .WithName("SearchPublications")
+                .WithSummary("Listar publicações do time")
+                .ProducesWithDescription<PagedResult<PublicationSummaryDTO>>(StatusCodes.Status200OK, "Uma página das publicações do time que atendem aos filtros.")
+                .ProducesProblemWithDescription(StatusCodes.Status400BadRequest, "Algum filtro é inválido, ou a data inicial é posterior à final.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrado um time com o ID informado.")
+                .WithDescription("Lista as publicações do time com filtros e paginação. Para a agenda, filtre por período (from/to). Para a caixa de aprovação, use status=pendingApproval e order=ascending. Qualquer membro do time pode consultar.");
+
+            group
+                .MapGet("publications/{publicationId:guid}", GetPublicationDetails)
+                .WithName("GetPublicationDetails")
+                .WithSummary("Consultar publicação")
+                .ProducesWithDescription<PublicationDetailsDTO>(StatusCodes.Status200OK, "Os dados completos da publicação, da postagem e dos envolvidos.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou a publicação não pertence ao time.")
+                .WithDescription("Consulta uma publicação do time com a postagem, as imagens, quem solicitou e quem revisou. Qualquer membro do time pode consultar.");
         }
 
         private static async Task<IResult> ConfigureInstagramAccount([FromRoute, Description("ID do time.")] Guid teamId, [FromBody] ConfigureInstagramAccountRequest request, IMediator mediator, CancellationToken cancellationToken)
@@ -141,12 +167,18 @@ namespace Sienna.WebApi.Endpoints
             );
         }
 
-        private static async Task<IResult> RequestPublication([FromRoute, Description("ID do time.")] Guid teamId, [FromBody] RequestPublicationRequest request, IMediator mediator, CancellationToken cancellationToken)
+        private static async Task<IResult> RequestPublication(
+            [FromRoute, Description("ID do time.")] Guid teamId, 
+            [FromBody] RequestPublicationRequest request, 
+            IMediator mediator, 
+            CancellationToken cancellationToken)
         {
             var result = await mediator.Send(request.ToCommand(teamId), cancellationToken);
 
             return result.ToHttpResult(response => TypedResults.CreatedAtRoute(
-                value: response
+                value: response,
+                routeName: "GetPublicationDetails",
+                routeValues: new { teamId, publicationId = response.Id }
             ));
         }
 
@@ -199,6 +231,37 @@ namespace Sienna.WebApi.Endpoints
             CancellationToken cancellationToken)
         {
             var result = await mediator.Send(request.ToCommand(teamId, publicationId), cancellationToken);
+
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> SearchPublications(
+            [FromRoute, Description("ID do time.")] Guid teamId,
+            [AsParameters] PublicationFilterParameters filters,
+            [AsParameters] PaginationParameters pagination,
+            IMediator mediator,
+            CancellationToken cancellationToken
+            )
+        {
+            var query = new SearchPublicationQuery(teamId, filters.ToFilter(), pagination.ToPageRequest());
+            var result = await mediator.Send(query, cancellationToken);
+
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> GetPublicationDetails(
+            [FromRoute, Description("ID do time.")] Guid teamId,
+            [FromRoute, Description("ID da publicação.")] Guid publicationId,
+            IMediator mediator,
+            CancellationToken cancellationToken
+            )
+        {
+            var query = new GetPublicationQuery(teamId, publicationId);
+            var result = await mediator.Send(query, cancellationToken);
 
             return result.ToHttpResult(
                 onSuccess: TypedResults.Ok

@@ -1,6 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Sienna.Domain.Abstractions.Media.DTOs;
+using Sienna.Domain.Abstractions.Pagination;
+using Sienna.Domain.Abstractions.Social.DTOs;
 using Sienna.Domain.Abstractions.Social.Repositories;
+using Sienna.Domain.Entities.Identity;
 using Sienna.Domain.Entities.Social;
+using Sienna.Infrastructure.Extensions;
 
 namespace Sienna.Infrastructure.Repositories.Social
 {
@@ -66,6 +71,55 @@ namespace Sienna.Infrastructure.Repositories.Social
                 .FirstOrDefaultAsync(publication => publication.TeamId == teamId && publication.Id == publicationId, cancellationToken);
         }
 
+        public async Task<PublicationDetailsDTO?> GetDetailsAsync(Guid teamId, Guid publicationId, CancellationToken cancellationToken = default)
+        {
+            return await Context.Set<PostPublication>()
+                .Where(publication => publication.TeamId == teamId && publication.Id == publicationId)
+                .Select(publication => new PublicationDetailsDTO
+                {
+                    Id = publication.Id,
+                    PostId = publication.PostId,
+                    Caption = publication.Post!.Caption,
+
+                    Assets = publication.Post.Assets
+                        .OrderBy(asset => asset.SequenceOrder)
+                        .Select(asset => new AssetDTO
+                        {
+                            SequenceOrder = asset.SequenceOrder,
+                            Media = new MediaDTO
+                            {
+                                Id = asset.Media!.Id,
+                                FileName = asset.Media.Name + asset.Media.Extension
+                            }
+                        }),
+
+                    Format = publication.Format,
+                    Status = publication.Status,
+                    ScheduledFor = publication.ScheduledFor,
+                    RequestedById = publication.RequestedById,
+
+                    RequestedByName = Context.Set<User>()
+                        .Where(user => user.Id == publication.RequestedById)
+                        .Select(user => user.FullName)
+                        .FirstOrDefault() ?? string.Empty,
+
+                    RequestedAt = publication.RequestedAt,
+                    ReviewedById = publication.ReviewedById,
+
+                    ReviewedByName = Context.Set<User>()
+                        .Where(user => user.Id == publication.ReviewedById)
+                        .Select(user => user.FullName)
+                        .FirstOrDefault() ?? string.Empty,
+
+                    ReviewedAt = publication.ReviewedAt,
+                    RejectionReason = publication.RejectionReason,
+                    PublishedAt = publication.PublishedAt,
+                    ExternalIds = publication.ExternalIds,
+                    FailureReason = publication.FailureReason
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
         public async Task<bool> HasBlockingPublicationAsync(Guid postId, PublicationFormat format, CancellationToken cancellationToken = default)
         {
             return await Context.Set<PostPublication>()
@@ -74,6 +128,59 @@ namespace Sienna.Infrastructure.Repositories.Social
                     publication.Format == format &&
                     BlockingStatuses.Contains(publication.Status),
                     cancellationToken);
+        }
+
+        public async Task<PagedResult<PublicationSummaryDTO>> SearchAsync(Guid teamId, PublicationFilter filter, PageRequest page, CancellationToken cancellationToken = default)
+        {
+            var query = Context.Set<PostPublication>()
+                .Where(publication => publication.TeamId == teamId);
+
+            if (filter.Statuses.Count > 0)
+            {
+                var statuses = filter.Statuses.ToArray();
+                query = query.Where(publication => statuses.Contains(publication.Status));
+            }
+
+            if (filter.Format is PublicationFormat format)
+                query = query.Where(publication => publication.Format == format);
+
+            if (filter.From is DateTime from)
+                query = query.Where(publication => publication.ScheduledFor >= from);
+
+            if (filter.To is DateTime to)
+                query = query.Where(publication => publication.ScheduledFor <= to);
+
+            var projected = query.Select(publication => new PublicationSummaryDTO
+            {
+                Id = publication.Id,
+                PostId = publication.PostId,
+                Caption = publication.Post!.Caption,
+
+                ThumbnailMediaId = publication.Post.Assets
+                    .OrderBy(asset => asset.SequenceOrder)
+                    .Select(asset => asset.MediaId)
+                    .FirstOrDefault(),
+
+                MediaCount = publication.Post.Assets.Count,
+                Format = publication.Format,
+                Status = publication.Status,
+                ScheduledFor = publication.ScheduledFor,
+                RequestedById = publication.RequestedById,
+
+                RequestedByName = Context.Set<User>()
+                    .Where(user => user.Id == publication.RequestedById)
+                    .Select(user => user.FullName)
+                    .FirstOrDefault() ?? string.Empty,
+
+                RequestedAt = publication.RequestedAt,
+                PublishedAt = publication.PublishedAt
+            });
+
+            var ordered = filter.Order is SortDirection.Ascending
+                ? projected.OrderBy(dto => dto.ScheduledFor).ThenBy(dto => dto.Id)
+                : projected.OrderByDescending(dto => dto.ScheduledFor).ThenBy(dto => dto.Id);
+
+            return await ordered.ToPagedResultAsync(page, cancellationToken);
         }
     }
 }
