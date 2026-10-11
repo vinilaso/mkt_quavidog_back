@@ -2,8 +2,8 @@ using Sienna.Application;
 using Sienna.Infrastructure;
 using Sienna.Infrastructure.Migrations;
 using Sienna.WebApi;
-using Sienna.WebApi.Endpoints;
 using Sienna.WebApi.Endpoints.Extensions;
+using Sienna.WebApi.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +24,8 @@ app.MapApiReferences();
 app.UseHttpsRedirection();
 
 app.UseRouting();
+
+app.UseMiddleware<QueryEnumNormalizationMiddleware>();
 
 app.UseCors("VueApp");
 
