@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Sienna.Application.Mappings.Identity;
 using Sienna.WebApi.HostedServices.Email;
+using Sienna.WebApi.HostedServices.Insights;
 using Sienna.WebApi.HostedServices.Publications;
 using Sienna.WebApi.OpenApi;
 using System.Text.Json;
@@ -122,6 +123,13 @@ namespace Sienna.WebApi
                 .ValidateOnStart();
 
             services.AddHostedService<PublicationBackgroundWorker>();
+
+            services.AddOptions<InsightsWorkerSettings>()
+                .Bind(configuration.GetSection(nameof(InsightsWorkerSettings)))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+            services.AddHostedService<InsightsBackgroundWorker>();
         }
     }
 }

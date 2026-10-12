@@ -6,6 +6,7 @@ using Sienna.Domain.Abstractions.Social.Repositories;
 using Sienna.Domain.Entities.Identity;
 using Sienna.Domain.Entities.Social;
 using Sienna.Infrastructure.Extensions;
+using System.Linq.Expressions;
 
 namespace Sienna.Infrastructure.Repositories.Social
 {
@@ -118,6 +119,43 @@ namespace Sienna.Infrastructure.Repositories.Social
                     FailureReason = publication.FailureReason
                 })
                 .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<Guid>> GetDueForInsightsAsync(DateTime utcNow, int maxCount, CancellationToken cancellationToken = default)
+        {
+            var storyStart = InsightCollectionPolicy.GetStoryStart(utcNow);
+            var feedStart = InsightCollectionPolicy.GetFeedStart(utcNow);
+            var intensiveStart = InsightCollectionPolicy.GetIntensiveStart(utcNow);
+            var intensiveDue = InsightCollectionPolicy.GetIntensiveDue(utcNow);
+            var regularDue = InsightCollectionPolicy.GetRegularDue(utcNow);
+
+            return await Context.Set<PostPublication>()
+                .Where(publication => publication.Status == PublicationStatus.Published && publication.PublishedAt != null)
+                .Where(publication =>
+                    (publication.Format == PublicationFormat.Story && publication.PublishedAt > storyStart) ||
+                    (publication.Format == PublicationFormat.Feed && publication.PublishedAt > feedStart)
+                )
+                .Select(publication => new
+                {
+                    publication.Id,
+                    publication.Format,
+                    publication.PublishedAt,
+                    LastCollectedAt = Context.Set<PublicationInsightSnapshot>()
+                        .Where(snapshot => snapshot.PublicationId == publication.Id)
+                        .Max(snapshot => (DateTime?)snapshot.CollectedAt)
+                })
+                .Where(candidate =>
+                    (candidate.LastCollectedAt == null) ||
+                    // Stories e feed nas primeiras 48 horas: de hora em hora
+                    ((candidate.Format == PublicationFormat.Story || candidate.PublishedAt > intensiveStart) && candidate.LastCollectedAt < intensiveDue) ||
+                    // Feed depois de 48 horas: uma vez por dia
+                    (candidate.Format == PublicationFormat.Feed && candidate.PublishedAt < intensiveStart && candidate.LastCollectedAt < regularDue)
+                )
+                .OrderBy(candidate => candidate.LastCollectedAt ?? DateTime.MinValue)
+                .ThenBy(candidate => candidate.Id)
+                .Select(candidate => candidate.Id)
+                .Take(maxCount)
+                .ToListAsync(cancellationToken);
         }
 
         public async Task<PublicationNotificationDTO?> GetNotificationDataAsync(Guid publicationId, CancellationToken cancellationToken = default)
