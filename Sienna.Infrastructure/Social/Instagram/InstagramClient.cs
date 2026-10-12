@@ -5,41 +5,14 @@ using Sienna.Domain.Abstractions.Results;
 using Sienna.Domain.Entities.Social;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Sienna.Infrastructure.Social.Instagram
 {
-    public sealed class InstagramClient(
+    public sealed partial class InstagramClient(
         HttpClient httpClient, 
         IOptions<InstagramSettings> settings,
         ILogger<InstagramClient> logger) : IInstagramClient
     {
-        private record IdResponse(string Id);
-        private record StatusResponse([property: JsonPropertyName("status_code")] string StatusCode);
-
-        private record ProfileResponse(
-            [property: JsonPropertyName("user_id")] string UserId,
-            [property: JsonPropertyName("username")] string Username,
-            [property: JsonPropertyName("account_type")] string AccountType
-        );
-
-        private record GraphError(
-            [property: JsonPropertyName("message")] string Message, 
-            [property: JsonPropertyName("code")] int Code,
-            [property: JsonPropertyName("error_user_msg")] string? UserMessage
-        );
-
-        private record GraphErrorResponse(GraphError? Error);
-
-        private sealed class InstagramApiException(string message) : Exception(message);
-
-        private const int MaxStatusChecks = 15;
-        private static readonly TimeSpan StatusCheckInterval = TimeSpan.FromSeconds(2);
-        private static readonly JsonSerializerOptions JsonOptions = new()
-        {
-            PropertyNameCaseInsensitive = true
-        };
-
         public Task<Result<InstagramProfile>> GetProfileAsync(string accessToken, CancellationToken cancellationToken = default)
         {
             return ExecuteAsync(async () =>
@@ -65,6 +38,46 @@ namespace Sienna.Infrastructure.Social.Instagram
                     _ => throw new ArgumentOutOfRangeException("request.Format", "Formato de publicação não suportado.")
                 };
             });
+        }
+
+        public Task<Result<InsightMetrics>> GetMediaInsightsAsync(InstagramCredentials credentials, string mediaId, PublicationFormat format, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(credentials);
+            ArgumentNullException.ThrowIfNull(mediaId);
+
+            return ExecuteAsync(async () =>
+            {
+                var metrics = format switch
+                {
+                    PublicationFormat.Feed => FeedInsightMetrics,
+                    PublicationFormat.Story => StoryInsightMetrics,
+                    _ => throw new ArgumentOutOfRangeException(nameof(format), "Formato de publicação não suportado.")
+                };
+
+                var response = await GetAsync<InsightsResponse>($"{mediaId}/insights?metric={metrics}", credentials.AccessToken, cancellationToken);
+
+                var values = response.Data
+                    .GroupBy(metric => metric.Name, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(group => group.Key, group => ReadValue(group.First()), StringComparer.OrdinalIgnoreCase);
+
+                return new InsightMetrics
+                {
+                    Views = values.GetValueOrDefault("views"),
+                    Reach = values.GetValueOrDefault("reach"),
+                    Likes = values.GetValueOrDefault("likes"),
+                    Comments = values.GetValueOrDefault("comments"),
+                    Shares = values.GetValueOrDefault("shares"),
+                    Saved = values.GetValueOrDefault("saved"),
+                    Replies = values.GetValueOrDefault("replies"),
+                    TotalInteractions = values.GetValueOrDefault("total_interactions")
+                };
+            });
+
+            static int? ReadValue(InsightMetricResponse metric)
+            {
+                var value = metric.TotalValue?.Value ?? metric.Values?[0]?.Value;
+                return value is long number ? (int)Math.Clamp(number, 0, int.MaxValue) : null;
+            }
         }
 
         #region Stories
