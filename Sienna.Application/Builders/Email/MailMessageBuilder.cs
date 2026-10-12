@@ -79,7 +79,7 @@ namespace Sienna.Application.Builders.Email
                 Body = _body,
                 IsHTML = _isHtml,
                 Subject = _subject ?? string.Empty,
-                Template = new MailTemplate
+                Template = _templateId is null ? null : new MailTemplate
                 {
                     Id = _templateId,
                     Variables = _templateVariables

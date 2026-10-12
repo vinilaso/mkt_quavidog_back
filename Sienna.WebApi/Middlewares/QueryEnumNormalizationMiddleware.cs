@@ -121,7 +121,15 @@ namespace Sienna.WebApi.Middlewares
                 return;
 
             var type = parameter.ParameterType;
+
+            if (type is null)
+                return;
+
             type = type.IsArray ? type.GetElementType() : type;
+
+            if (type is null)
+                return;
+
             type = Nullable.GetUnderlyingType(type) ?? type;
 
             if (!type.IsEnum)

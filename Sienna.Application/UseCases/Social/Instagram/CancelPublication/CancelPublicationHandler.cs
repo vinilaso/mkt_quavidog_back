@@ -1,5 +1,8 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
+using Sienna.Application.Extensions;
 using Sienna.Application.Messaging.Teams;
+using Sienna.Application.UseCases.Social.Instagram.Notifications.PublicationCanceled;
 using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Results;
 using Sienna.Domain.Abstractions.Security;
@@ -13,6 +16,8 @@ namespace Sienna.Application.UseCases.Social.Instagram.CancelPublication
         IUserContext userContext,
         ITeamAccessContext teamAccess,
         IPostPublicationRepository publicationRepository,
+        IPublisher publisher,
+        ILogger<CancelPublicationHandler> logger,
         IUnitOfWork uow) : IRequestHandler<CancelPublicationCommand, Result<PublicationResponse>>
     {
         public async Task<Result<PublicationResponse>> Handle(CancelPublicationCommand request, CancellationToken cancellationToken)
@@ -38,6 +43,9 @@ namespace Sienna.Application.UseCases.Social.Instagram.CancelPublication
             {
                 return PublicationErrors.ConcurrentUpdate;
             }
+
+            if (publication.RequestedById != userContext.Id)
+                await publisher.PublishSafelyAsync(new PublicationCanceledNotification(publication.Id, userContext.Name), logger, cancellationToken);
 
             return PublicationResponse.From(publication);
         }

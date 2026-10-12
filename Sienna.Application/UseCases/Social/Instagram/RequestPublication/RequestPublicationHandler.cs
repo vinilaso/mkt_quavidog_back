@@ -1,6 +1,9 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
+using Sienna.Application.Extensions;
 using Sienna.Application.Interfaces.Social.Signal;
 using Sienna.Application.Messaging.Teams;
+using Sienna.Application.UseCases.Social.Instagram.Notifications.PublicationRequested;
 using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Media.Repositories;
 using Sienna.Domain.Abstractions.Results;
@@ -20,7 +23,9 @@ namespace Sienna.Application.UseCases.Social.Instagram.RequestPublication
         IPostPublicationRepository publicationRepository,
         IMediaRepository mediaRepository,
         IPublicationSignal publicationSignal,
-        IUnitOfWork uow) : IRequestHandler<RequestPublicationCommand, Result<PublicationResponse>>
+        IPublisher publisher,
+        IUnitOfWork uow,
+        ILogger<RequestPublicationHandler> logger) : IRequestHandler<RequestPublicationCommand, Result<PublicationResponse>>
     {
         public async Task<Result<PublicationResponse>> Handle(RequestPublicationCommand request, CancellationToken cancellationToken)
         {
@@ -34,7 +39,7 @@ namespace Sienna.Application.UseCases.Social.Instagram.RequestPublication
                 return Error.Forbidden("Publication.NotAuthor", "Apenas o autor da postagem ou um gestor do time pode solicitar a publicação.");
 
             if (await publicationRepository.HasBlockingPublicationAsync(post.Id, request.Format, cancellationToken))
-                return DuplicatePublication();
+                return PublicationErrors.AlreadyRequested;
 
             var mediaIds = post.Assets
                 .OrderBy(asset => asset.SequenceOrder)
@@ -70,16 +75,15 @@ namespace Sienna.Application.UseCases.Social.Instagram.RequestPublication
             }
             catch (DuplicateEntryException)
             {
-                return DuplicatePublication();
+                return PublicationErrors.AlreadyRequested;
             }
 
             if (publication.Status is PublicationStatus.Approved)
                 publicationSignal.Notify();
+            else
+                await publisher.PublishSafelyAsync(new PublicationRequestedNotification(publication.Id), logger, cancellationToken);
 
             return PublicationResponse.From(publication);
         }
-
-        private static Error DuplicatePublication() =>
-            Error.Conflict("Publication.AlreadyRequested", "Esta postagem já possui uma publicação pendente, agendada ou publicada neste formato.");
     }
 }

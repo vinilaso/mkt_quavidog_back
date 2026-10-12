@@ -1,6 +1,9 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
+using Sienna.Application.Extensions;
 using Sienna.Application.Interfaces.Social.Signal;
 using Sienna.Application.Messaging.Teams;
+using Sienna.Application.UseCases.Social.Instagram.Notifications.PublicationRequested;
 using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Results;
 using Sienna.Domain.Abstractions.Security;
@@ -15,6 +18,8 @@ namespace Sienna.Application.UseCases.Social.Instagram.ReschedulePublication
         ITeamAccessContext teamAccess,
         IPostPublicationRepository publicationRepository,
         IPublicationSignal publicationSignal,
+        IPublisher publisher,
+        ILogger<ReschedulePublicationHandler> logger,
         IUnitOfWork uow) : IRequestHandler<ReschedulePublicationCommand, Result<PublicationResponse>>
     {
         public async Task<Result<PublicationResponse>> Handle(ReschedulePublicationCommand request, CancellationToken cancellationToken)
@@ -43,6 +48,8 @@ namespace Sienna.Application.UseCases.Social.Instagram.ReschedulePublication
 
             if (publication.Status is PublicationStatus.Approved)
                 publicationSignal.Notify();
+            else
+                await publisher.PublishSafelyAsync(new PublicationRequestedNotification(publication.Id), logger, cancellationToken);
 
             return PublicationResponse.From(publication);
         }

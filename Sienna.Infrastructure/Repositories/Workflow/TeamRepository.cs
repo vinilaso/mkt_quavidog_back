@@ -1,11 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Sienna.Domain.Abstractions.Identity.DTOs;
 using Sienna.Domain.Abstractions.Workflow.DTOs.Teams;
 using Sienna.Domain.Abstractions.Workflow.Repositories;
 using Sienna.Domain.Entities.Workflow;
 
 namespace Sienna.Infrastructure.Repositories.Workflow
 {
-    internal class TeamRepository(ApplicationContext context) : AbstractRepository<Team>(context), ITeamRepository
+    internal sealed class TeamRepository(ApplicationContext context) : AbstractRepository<Team>(context), ITeamRepository
     {
         public async Task<TeamCampaignsDTO?> GetTeamCampaignsAsync(Guid teamId, CancellationToken cancellationToken = default)
         {
@@ -69,6 +70,18 @@ namespace Sienna.Infrastructure.Repositories.Workflow
                         .ToList()
                 })
                 .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<UserContactDTO>> GetManagerContactsAsync(Guid teamId, CancellationToken cancellationToken = default)
+        {
+            return await Context.Set<TeamMember>()
+                .Where(member => member.TeamId == teamId)
+                .Select(member => new UserContactDTO
+                {
+                    Name = member.Member!.FullName,
+                    Email = member.Member.Email!
+                })
+                .ToListAsync(cancellationToken);
         }
     }
 }

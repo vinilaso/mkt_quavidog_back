@@ -120,6 +120,40 @@ namespace Sienna.Infrastructure.Repositories.Social
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
+        public async Task<PublicationNotificationDTO?> GetNotificationDataAsync(Guid publicationId, CancellationToken cancellationToken = default)
+        {
+            return await Context.Set<PostPublication>()
+                .Where(publication => publication.Id == publicationId)
+                .Select(publication => new PublicationNotificationDTO
+                {
+                    PublicationId = publication.Id,
+                    TeamId = publication.TeamId,
+                    TeamName = publication.Team!.Name,
+                    Caption = publication.Post!.Caption,
+                    Format = publication.Format,
+                    Status = publication.Status,
+                    ScheduledFor = publication.ScheduledFor,
+                    RejectionReason = publication.RejectionReason,
+                    FailureReason = publication.FailureReason,
+
+                    RequesterName = Context.Set<User>()
+                        .Where(user => user.Id == publication.RequestedById)
+                        .Select(user => user.FullName)
+                        .FirstOrDefault() ?? string.Empty,
+
+                    RequesterEmail = Context.Set<User>()
+                        .Where(user => user.Id == publication.RequestedById)
+                        .Select(user => user.Email)
+                        .FirstOrDefault() ?? string.Empty,
+
+                    ReviewerName = Context.Set<User>()
+                        .Where(user => user.Id == publication.ReviewedById)
+                        .Select(user => user.FullName)
+                        .FirstOrDefault() ?? string.Empty
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
         public async Task<bool> HasBlockingPublicationAsync(Guid postId, PublicationFormat format, CancellationToken cancellationToken = default)
         {
             return await Context.Set<PostPublication>()

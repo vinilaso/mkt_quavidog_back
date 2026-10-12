@@ -1,7 +1,9 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
+using Sienna.Application.Extensions;
 using Sienna.Application.Interfaces.Security;
 using Sienna.Application.Interfaces.Social.Instagram;
+using Sienna.Application.UseCases.Social.Instagram.Notifications.PublicationFinished;
 using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Media.Repositories;
 using Sienna.Domain.Abstractions.Results;
@@ -18,6 +20,7 @@ namespace Sienna.Application.UseCases.Social.Instagram.ExecutePublication
         IInstagramClient instagramClient,
         ISecretProvider secretProvider,
         IUnitOfWork uow,
+        IPublisher publisher,
         ILogger<ExecutePublicationHandler> logger) : IRequestHandler<ExecutePublicationCommand, Result<ExecutePublicationResponse>>
     {
         public async Task<Result<ExecutePublicationResponse>> Handle(ExecutePublicationCommand request, CancellationToken cancellationToken)
@@ -44,6 +47,7 @@ namespace Sienna.Application.UseCases.Social.Instagram.ExecutePublication
                 return await FailAsync(publication, marked.Error.Message, cancellationToken);
 
             await uow.CommitChangesAsync(cancellationToken);
+            await publisher.PublishSafelyAsync(new PublicationFinishedNotification(publication.Id), logger, cancellationToken);
 
             logger.LogInformation("Publicação {PublicationId} enviada ao Instagram: {ExternalIds}.", publication.Id, string.Join(", ", publication.ExternalIds));
             return ExecutePublicationResponse.FromPublication(publication);
@@ -102,6 +106,7 @@ namespace Sienna.Application.UseCases.Social.Instagram.ExecutePublication
                 return marked.Error;
 
             await uow.CommitChangesAsync(cancellationToken);
+            await publisher.PublishSafelyAsync(new PublicationFinishedNotification(publication.Id), logger, cancellationToken);
 
             logger.LogWarning("Falha ao publicar {PublicationId}: {Reason}", publication.Id, reason);
             return ExecutePublicationResponse.FromPublication(publication);

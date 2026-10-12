@@ -18,12 +18,12 @@ namespace Sienna.Infrastructure.Email.Resend
 
         private static ResendMailTemplate? MapTemplate(this MailTemplate? template)
         {
-            if (template is null)
+            if (string.IsNullOrWhiteSpace(template?.Id))
                 return null;
 
             return new ResendMailTemplate(
                 Id: template.Id,
-                Variables: template.Variables
+                Variables: template.Variables ?? new { } 
             );
         }
 

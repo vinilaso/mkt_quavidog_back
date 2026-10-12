@@ -1,4 +1,7 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
+using Sienna.Application.Extensions;
+using Sienna.Application.UseCases.Social.Instagram.Notifications.PublicationReviewed;
 using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Results;
 using Sienna.Domain.Abstractions.Security;
@@ -10,6 +13,8 @@ namespace Sienna.Application.UseCases.Social.Instagram.RejectPublication
     public sealed class RejectPublicationHandler(
         IUserContext userContext,
         IPostPublicationRepository publicationRepository,
+        IPublisher publisher,
+        ILogger<RejectPublicationHandler> logger,
         IUnitOfWork uow) : IRequestHandler<RejectPublicationCommand, Result<PublicationResponse>>
     {
         public async Task<Result<PublicationResponse>> Handle(RejectPublicationCommand request, CancellationToken cancellationToken)
@@ -23,6 +28,7 @@ namespace Sienna.Application.UseCases.Social.Instagram.RejectPublication
                 return rejectResult.Error;
 
             await uow.CommitChangesAsync(cancellationToken);
+            await publisher.PublishSafelyAsync(new PublicationReviewedNotification(publication.Id), logger, cancellationToken);
 
             return PublicationResponse.From(publication);
         }
