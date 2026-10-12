@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using Sienna.Application.Extensions;
-using Sienna.Application.Interfaces.Security;
 using Sienna.Application.Interfaces.Social.Instagram;
 using Sienna.Application.UseCases.Social.Instagram.Notifications.PublicationFinished;
 using Sienna.Domain.Abstractions;
@@ -9,7 +8,6 @@ using Sienna.Domain.Abstractions.Media.Repositories;
 using Sienna.Domain.Abstractions.Results;
 using Sienna.Domain.Abstractions.Social.Repositories;
 using Sienna.Domain.Entities.Social;
-using System.Security.Cryptography;
 
 namespace Sienna.Application.UseCases.Social.Instagram.ExecutePublication
 {
@@ -18,10 +16,10 @@ namespace Sienna.Application.UseCases.Social.Instagram.ExecutePublication
         IInstagramAccountRepository accountRepository,
         IMediaRepository mediaRepository,
         IInstagramClient instagramClient,
-        ISecretProvider secretProvider,
         IUnitOfWork uow,
         IPublisher publisher,
-        ILogger<ExecutePublicationHandler> logger) : IRequestHandler<ExecutePublicationCommand, Result<ExecutePublicationResponse>>
+        ILogger<ExecutePublicationHandler> logger,
+        InstagramCredentialsResolver credentialsResolver) : IRequestHandler<ExecutePublicationCommand, Result<ExecutePublicationResponse>>
     {
         public async Task<Result<ExecutePublicationResponse>> Handle(ExecutePublicationCommand request, CancellationToken cancellationToken)
         {
@@ -71,31 +69,18 @@ namespace Sienna.Application.UseCases.Social.Instagram.ExecutePublication
             if (mediaValidation.IsFailure)
                 return mediaValidation.Error;
 
-            var accessTokenResult = TryGetAccessToken(account, publication.TeamId);
+            var credentialsResult = await credentialsResolver.ResolveAsync(publication.TeamId, cancellationToken);
 
-            if (accessTokenResult.IsFailure)
-                return accessTokenResult.Error;
+            if (credentialsResult.IsFailure)
+                return credentialsResult.Error;
 
             return new InstagramPublishRequest
             {
-                Credentials = new InstagramCredentials(account.InstagramUserId, accessTokenResult.Value),
+                Credentials = credentialsResult.Value,
                 Format = publication.Format,
                 MediaIds = mediaIds,
                 Caption = publication.Post.Caption
             };
-        }
-
-        private Result<string> TryGetAccessToken(InstagramAccount account, Guid teamId)
-        {
-            try
-            {
-                return secretProvider.Unprotect(account.ProtectedAccessToken);
-            }
-            catch (Exception e) when (e is CryptographicException or FormatException)
-            {
-                logger.LogError(e, "Não foi possível decifrar o token do Instagram do time {TeamId}.", teamId);
-                return Error.Validation("Publication.UnreadableToken", "O token do Instagram do time não pôde ser lido. Reconecte a conta e reenvie a publicação.");
-            }
         }
 
         private async Task<Result<ExecutePublicationResponse>> FailAsync(PostPublication publication, string reason, CancellationToken cancellationToken)

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Sienna.Application.Behaviors.Teams;
 using Sienna.Application.Messaging.Teams;
+using Sienna.Application.UseCases.Social.Instagram;
 
 namespace Sienna.Application
 {
@@ -10,6 +11,7 @@ namespace Sienna.Application
         {
             AddMediatR(services);
             AddTeamScope(services);
+            AddInstagramServices(services);
 
             return services;
         }
@@ -27,6 +29,11 @@ namespace Sienna.Application
         {
             services.AddScoped<TeamAccessContext>();
             services.AddScoped<ITeamAccessContext>(provider => provider.GetRequiredService<TeamAccessContext>());
+        }
+
+        private static void AddInstagramServices(IServiceCollection services)
+        {
+            services.AddScoped<InstagramCredentialsResolver>();
         }
     }
 }
