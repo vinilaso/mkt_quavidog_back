@@ -1,15 +1,19 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Sienna.Application.UseCases.Workflow.CancelInvitation;
 using Sienna.Application.UseCases.Workflow.GetCampaignPosts;
 using Sienna.Application.UseCases.Workflow.GetTeamCampaigns;
+using Sienna.Application.UseCases.Workflow.GetTeamInvitations;
 using Sienna.Application.UseCases.Workflow.GetTeamMembers;
 using Sienna.Domain.Abstractions.Workflow.DTOs.Campaigns;
+using Sienna.Domain.Abstractions.Workflow.DTOs.Invitations;
 using Sienna.Domain.Abstractions.Workflow.DTOs.Teams;
 using Sienna.WebApi.Endpoints.Extensions;
 using Sienna.WebApi.Endpoints.Models.Workflow.Campaigns;
 using Sienna.WebApi.Endpoints.Models.Workflow.Teams;
 using Sienna.WebApi.Extensions;
 using Sienna.WebApi.OpenApi;
+using Sienna.WebApi.RateLimiting;
 using System.ComponentModel;
 
 namespace Sienna.WebApi.Endpoints
@@ -29,18 +33,6 @@ namespace Sienna.WebApi.Endpoints
                 .WithDescription("Cria um time. O usuário logado é marcado como dono do time criado.");
 
             group
-                .MapPost("teams/{teamId:guid}/members", AddTeamMember)
-                .WithName("AddTeamMember")
-                .WithSummary("Adicionar membro ao time")
-                .ProducesWithDescription(StatusCodes.Status200OK, "O usuário foi adicionado ao time.")
-                .ProducesProblemWithDescription(StatusCodes.Status400BadRequest, $"O papel informado não é \"member\" nem \"administrator\".")
-                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
-                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time ou não é dono/administrador dele.")
-                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time ou o usuário a ser adicionado não foi encontrado.")
-                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "O usuário já pertence ao time.")
-                .WithDescription($"Adiciona um usuário ao time. O campo role aceita \"member\" ou \"administrator\" (sem diferenciar maiúsculas). Apenas o dono e os administradores do time podem adicionar usuários.");
-
-            group
                 .MapGet("teams/{teamId:guid}/members", GetTeamMembers)
                 .WithName("GetTeamMembers")
                 .WithSummary("Listar membros do time")
@@ -49,6 +41,42 @@ namespace Sienna.WebApi.Endpoints
                 .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrado um time com o ID informado.")
                 .WithDescription("Lista os membros de um time, ordenados por papel (dono, administradores e membros) e depois por nome. O campo role vem como \"owner\", \"administrator\" ou \"member\". Qualquer membro do time pode consultar.");
+
+            group
+                .MapPost("teams/{teamId:guid}/invitations", InviteToTeam)
+                .WithName("InviteToTeam")
+                .WithSummary("Convidar para o time")
+                .RequireRateLimiting(RateLimitPolicies.Invitations)
+                .ProducesWithDescription(StatusCodes.Status202Accepted, "O convite foi registrado e o e-mail será enviado.")
+                .ProducesProblemWithDescription(StatusCodes.Status400BadRequest, "O e-mail é inválido ou o papel não é member nem administrator.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time ou não é dono/administrador dele.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrado um time com o ID informado.")
+                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "O e-mail já pertence a um membro do time.")
+                .ProducesProblemWithDescription(StatusCodes.Status429TooManyRequests, "O limite de 20 convites por hora foi atingido.")
+                .WithDescription("Convida um e-mail para o time. A resposta é a mesma exista ou não uma conta com esse e-mail. Convidar de novo um e-mail com convite pendente renova o convite por mais 7 dias. Apenas o dono e os administradores do time podem convidar.");
+
+            group
+                .MapGet("teams/{teamId:guid}/invitations", GetTeamInvitations)
+                .WithName("GetTeamInvitations")
+                .WithSummary("Listar convites pendentes do time")
+                .ProducesWithDescription<IReadOnlyList<TeamInvitationDTO>>(StatusCodes.Status200OK, "Os convites pendentes e ainda válidos do time, dos mais recentes para os mais antigos.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time ou não é dono/administrador dele.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrado um time com o ID informado.")
+                .WithDescription("Lista os convites do time que ainda aguardam resposta, com o e-mail convidado, o papel oferecido, quem convidou e a validade. Convites expirados, aceitos, recusados ou cancelados não aparecem. Apenas o dono e os administradores do time podem consultar.");
+
+
+            group
+                .MapDelete("teams/{teamId:guid}/invitations/{invitationId:guid}", CancelInvitation)
+                .WithName("CancelInvitation")
+                .WithSummary("Cancelar convite")
+                .ProducesWithDescription(StatusCodes.Status204NoContent, "O convite foi cancelado e não pode mais ser aceito.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time ou não é dono/administrador dele.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou o convite não pertence ao time.")
+                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "O convite já foi aceito, recusado ou cancelado.")
+                .WithDescription("Cancela um convite pendente do time. Depois de cancelado, o convidado não consegue mais aceitá-lo, mas um novo convite pode ser enviado para o mesmo e-mail. Apenas o dono e os administradores do time podem cancelar.");
 
             group
                 .MapPost("teams/{teamId:guid}/campaigns", CreateCampaign)
@@ -102,20 +130,6 @@ namespace Sienna.WebApi.Endpoints
             ));
         }
 
-        private static async Task<IResult> AddTeamMember([FromRoute, Description("ID do time.")] Guid teamId, [FromBody] AssignUserToTeamRequest request, IMediator mediator, CancellationToken cancellationToken)
-        {
-            var command = request.ToCommand(teamId);
-
-            if (command.IsFailure)
-                return command.Error.CreateProblemDetails();
-
-            var result = await mediator.Send(command.Value, cancellationToken);
-
-            return result.ToHttpResult(
-                onSuccess: TypedResults.Ok
-            );
-        }
-
         private static async Task<IResult> GetTeamMembers([FromRoute, Description("ID do time.")] Guid teamId, IMediator mediator, CancellationToken cancellationToken)
         {
             var query = new GetTeamMembersQuery(teamId);
@@ -163,6 +177,43 @@ namespace Sienna.WebApi.Endpoints
 
             return result.ToHttpResult(
                 onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> InviteToTeam(
+            [FromRoute, Description("ID do time.")]Guid teamId,
+            [FromBody]InviteToTeamRequest request,
+            IMediator mediator,
+            CancellationToken cancellationToken)
+        {
+            var result = await mediator.Send(request.ToCommand(teamId), cancellationToken);
+            return result.ToHttpResult(
+                onSuccess: () => TypedResults.Accepted(default(string))
+            );
+        }
+
+        private static async Task<IResult> GetTeamInvitations(
+            [FromRoute, Description("ID do time.")]Guid teamId,
+            IMediator mediator,
+            CancellationToken cancellationToken)
+        {
+            var result = await mediator.Send(new GetTeamInvitationsQuery(teamId), cancellationToken);
+
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> CancelInvitation(
+            [FromRoute, Description("ID do time.")]Guid teamId,
+            [FromRoute, Description("ID do convite.")]Guid invitationId,
+            IMediator mediator,
+            CancellationToken cancellationToken)
+        {
+            var result = await mediator.Send(new CancelInvitationCommand(teamId, invitationId), cancellationToken);
+
+            return result.ToHttpResult(
+                onSuccess: TypedResults.NoContent
             );
         }
     }

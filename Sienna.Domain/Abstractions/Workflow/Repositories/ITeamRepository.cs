@@ -10,5 +10,6 @@ namespace Sienna.Domain.Abstractions.Workflow.Repositories
         Task<TeamAccessDTO?> GetAccessAsync(Guid teamId, Guid userId, CancellationToken cancellationToken = default);
         Task<TeamMembersDTO?> GetTeamMembersAsync(Guid teamId, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<UserContactDTO>> GetManagerContactsAsync(Guid teamId, CancellationToken cancellationToken = default);
+        Task<bool> HasMemberWithEmailAsync(Guid teamId, string email, CancellationToken cancellationToken = default);
     }
 }

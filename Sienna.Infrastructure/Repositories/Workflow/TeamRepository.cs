@@ -3,6 +3,7 @@ using Sienna.Domain.Abstractions.Identity.DTOs;
 using Sienna.Domain.Abstractions.Workflow.DTOs.Teams;
 using Sienna.Domain.Abstractions.Workflow.Repositories;
 using Sienna.Domain.Entities.Workflow;
+using Sienna.Shared.Rules;
 
 namespace Sienna.Infrastructure.Repositories.Workflow
 {
@@ -75,13 +76,21 @@ namespace Sienna.Infrastructure.Repositories.Workflow
         public async Task<IReadOnlyList<UserContactDTO>> GetManagerContactsAsync(Guid teamId, CancellationToken cancellationToken = default)
         {
             return await Context.Set<TeamMember>()
-                .Where(member => member.TeamId == teamId)
+                .Where(member => member.TeamId == teamId && (member.Role == TeamMemberRole.Owner || member.Role == TeamMemberRole.Administrator))
                 .Select(member => new UserContactDTO
                 {
                     Name = member.Member!.FullName,
                     Email = member.Member.Email!
                 })
                 .ToListAsync(cancellationToken);
+        }
+
+        public async Task<bool> HasMemberWithEmailAsync(Guid teamId, string email, CancellationToken cancellationToken = default)
+        {
+            var normalized = EmailRules.Normalize(email);
+
+            return await Context.Set<TeamMember>()
+                .AnyAsync(member => member.TeamId == teamId && member.Member!.Email!.ToLower() == normalized, cancellationToken);
         }
     }
 }

@@ -541,6 +541,63 @@ namespace Sienna.Infrastructure.Migrations
                     b.ToTable("WORKFLOW_TEAMS", (string)null);
                 });
 
+            modelBuilder.Entity("Sienna.Domain.Entities.Workflow.TeamInvitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("EMAIL");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("EXPIRES_AT");
+
+                    b.Property<Guid>("InvitedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("INVITED_BY_ID");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("RESPONDED_AT");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("ROLE");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("STATUS");
+
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TEAM_ID");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvitedById");
+
+                    b.HasIndex("Email", "Status");
+
+                    b.HasIndex("TeamId", "Email")
+                        .IsUnique()
+                        .HasFilter("\"STATUS\" = 'Pending'");
+
+                    b.ToTable("WORKFLOW_TEAM_INVITATIONS", (string)null);
+                });
+
             modelBuilder.Entity("Sienna.Domain.Entities.Workflow.TeamMember", b =>
                 {
                     b.Property<Guid>("TeamId")
@@ -712,6 +769,23 @@ namespace Sienna.Infrastructure.Migrations
                     b.Navigation("Campaign");
 
                     b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("Sienna.Domain.Entities.Workflow.TeamInvitation", b =>
+                {
+                    b.HasOne("Sienna.Domain.Entities.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("InvitedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Sienna.Domain.Entities.Workflow.Team", "Team")
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Team");
                 });
 
             modelBuilder.Entity("Sienna.Domain.Entities.Workflow.TeamMember", b =>

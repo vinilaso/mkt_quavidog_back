@@ -3,16 +3,22 @@ using Microsoft.AspNetCore.Mvc;
 using Sienna.Application.UseCases.Identity.GetUserPosts;
 using Sienna.Application.UseCases.Identity.GetUserProfile;
 using Sienna.Application.UseCases.Identity.GetUserTeams;
+using Sienna.Application.UseCases.Workflow.AcceptInvitation;
+using Sienna.Application.UseCases.Workflow.DeclineInvitation;
+using Sienna.Application.UseCases.Workflow.GetMyInvitations;
 using Sienna.Domain.Abstractions.Identity.DTOs;
 using Sienna.Domain.Abstractions.Media.DTOs;
 using Sienna.Domain.Abstractions.Pagination;
 using Sienna.Domain.Abstractions.Security;
+using Sienna.Domain.Abstractions.Workflow.DTOs.Invitations;
 using Sienna.WebApi.Contracts.Identity;
 using Sienna.WebApi.Endpoints.Extensions;
 using Sienna.WebApi.Endpoints.Models.Identity;
 using Sienna.WebApi.Endpoints.Models.Pagination;
 using Sienna.WebApi.Extensions;
 using Sienna.WebApi.OpenApi;
+using Sienna.WebApi.RateLimiting;
+using System.ComponentModel;
 
 namespace Sienna.WebApi.Endpoints
 {
@@ -27,6 +33,7 @@ namespace Sienna.WebApi.Endpoints
             group
                 .MapPost("users", RegisterUser)
                 .WithName("RegisterUser")
+                .RequireRateLimiting(RateLimitPolicies.Authentication)
                 .WithSummary("Cadastrar usuário")
                 .ProducesWithDescription<Guid>(StatusCodes.Status201Created, "O usuário foi criado com sucesso no banco de dados.")
                 .ProducesProblemWithDescription(StatusCodes.Status400BadRequest, "Falha de validação nos parâmetros de entrada.")
@@ -35,6 +42,7 @@ namespace Sienna.WebApi.Endpoints
 
             group
                 .MapPost("tokens/login", Login)
+                .RequireRateLimiting(RateLimitPolicies.Authentication)
                 .WithName("Login")
                 .WithSummary("Autenticar usuário (login)")
                 .ProducesWithDescription<LoginResponse>(StatusCodes.Status200OK, "O usuário com e-mail e senha informados foi encontrado e o token JWT foi gerado.")
@@ -43,6 +51,7 @@ namespace Sienna.WebApi.Endpoints
 
             group
                 .MapPost("tokens/reset-password", SendPasswordResetToken)
+                .RequireRateLimiting(RateLimitPolicies.Authentication)
                 .WithName("SendPasswordResetToken")
                 .WithSummary("Solicitar redefinição de senha")
                 .ProducesWithDescription(StatusCodes.Status200OK, "O email com o token de redefinição de senha foi enviado com sucesso.")
@@ -90,6 +99,37 @@ namespace Sienna.WebApi.Endpoints
                 .ProducesWithDescription<PagedResult<PostDTO>>(StatusCodes.Status200OK, "Uma página das postagens do usuário autenticado, das mais recentes para as mais antigas.")
                 .ProducesProblemWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
                 .WithDescription("Busca as postagens criadas pelo usuário autenticado, com suas mídias.")
+                .RequireAuthorization();
+
+            group
+                .MapGet("users/me/invitations", GetCurrentUserInvitations)
+                .WithName("GetCurrentUserInvitations")
+                .WithSummary("Listar meus convites")
+                .ProducesWithDescription<IReadOnlyList<UserInvitationDTO>>(StatusCodes.Status200OK, "Os convites pendentes e ainda válidos para o e-mail do usuário autenticado, dos que expiram primeiro para os que expiram depois.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .WithDescription("Lista os convites para times enviados ao e-mail do usuário autenticado que ainda aguardam resposta. Convites expirados, aceitos, recusados ou cancelados não aparecem.")
+                .RequireAuthorization();
+
+            group
+                .MapPost("users/me/invitations/{invitationId:guid}/accept", AcceptInvitation)
+                .WithName("AcceptInvitation")
+                .WithSummary("Aceitar convite")
+                .ProducesWithDescription<Guid>(StatusCodes.Status200OK, "O convite foi aceito e o usuário passou a fazer parte do time. Retorna o ID do time.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrado um convite com o ID informado para o e-mail do usuário autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "O convite expirou, já foi respondido ou cancelado, ou o usuário já pertence ao time.")
+                .WithDescription("Aceita um convite enviado ao e-mail do usuário autenticado. O usuário entra no time com o papel indicado no convite (membro ou administrador). Convites valem por 7 dias.")
+                .RequireAuthorization();
+
+            group
+                .MapPost("users/me/invitations/{invitationId:guid}/decline", DeclineInvitation)
+                .WithName("DeclineInvitation")
+                .WithSummary("Recusar convite")
+                .ProducesWithDescription(StatusCodes.Status200OK, "O convite foi recusado.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrado um convite com o ID informado para o e-mail do usuário autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "O convite expirou, já foi respondido ou foi cancelado.")
+                .WithDescription("Recusa um convite enviado ao e-mail do usuário autenticado. Depois de recusado, o gestor do time pode enviar um novo convite.")
                 .RequireAuthorization();
 
             #endregion
@@ -163,6 +203,50 @@ namespace Sienna.WebApi.Endpoints
 
             var query = new GetUserPostsQuery(userContext.Id, pagination.ToPageRequest());
             var result = await mediator.Send(query, cancellationToken);
+
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> GetCurrentUserInvitations(IUserContext userContext, IMediator mediator, CancellationToken cancellationToken)
+        {
+            if (!userContext.IsAuthenticated)
+                return TypedResults.Unauthorized();
+
+            var result = await mediator.Send(new GetMyInvitationsQuery(), cancellationToken);
+
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> AcceptInvitation(
+            [FromRoute, Description("ID do convite.")]Guid invitationId, 
+            IUserContext userContext, 
+            IMediator mediator, 
+            CancellationToken cancellationToken)
+        {
+            if (!userContext.IsAuthenticated)
+                return TypedResults.Unauthorized();
+
+            var result = await mediator.Send(new AcceptInvitationCommand(invitationId), cancellationToken);
+
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> DeclineInvitation(
+            [FromRoute, Description("ID do convite.")]Guid invitationId, 
+            IUserContext userContext, 
+            IMediator mediator, 
+            CancellationToken cancellationToken)
+        {
+            if (!userContext.IsAuthenticated)
+                return TypedResults.Unauthorized();
+
+            var result = await mediator.Send(new DeclineInvitationCommand(invitationId), cancellationToken);
 
             return result.ToHttpResult(
                 onSuccess: TypedResults.Ok

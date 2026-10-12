@@ -28,7 +28,8 @@ namespace Sienna.WebApi.Endpoints
                 .WithSummary("Consultar mídia pública")
                 .ProducesWithDescription<FileContentHttpResult>(StatusCodes.Status200OK, "A imagem foi encontrada e retornada para exibição.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrada mídia cadastrada com o ID informado.")
-                .WithDescription("Retorna uma mídia sem exigir autenticação. Usada pela Meta para baixar as imagens das publicações no Instagram.");
+                .WithDescription("Retorna uma mídia sem exigir autenticação. Usada pela Meta para baixar as imagens das publicações no Instagram.")
+                .DisableRateLimiting();
 
             group
                 .MapPost("files", UploadMedia)
