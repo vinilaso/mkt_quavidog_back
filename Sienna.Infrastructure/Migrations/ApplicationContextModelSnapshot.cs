@@ -468,6 +468,59 @@ namespace Sienna.Infrastructure.Migrations
                     b.ToTable("SOCIAL_POST_PUBLICATIONS", (string)null);
                 });
 
+            modelBuilder.Entity("Sienna.Domain.Entities.Social.PublicationInsightSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ID");
+
+                    b.Property<DateTime>("CollectedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("COLLECTED_AT");
+
+                    b.Property<int?>("Comments")
+                        .HasColumnType("integer")
+                        .HasColumnName("COMMENTS");
+
+                    b.Property<int?>("Likes")
+                        .HasColumnType("integer")
+                        .HasColumnName("LIKES");
+
+                    b.Property<Guid>("PublicationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("PUBLICATION_ID");
+
+                    b.Property<int?>("Reach")
+                        .HasColumnType("integer")
+                        .HasColumnName("REACH");
+
+                    b.Property<int?>("Replies")
+                        .HasColumnType("integer")
+                        .HasColumnName("REPLIES");
+
+                    b.Property<int?>("Saved")
+                        .HasColumnType("integer")
+                        .HasColumnName("SAVED");
+
+                    b.Property<int?>("Shares")
+                        .HasColumnType("integer")
+                        .HasColumnName("SHARES");
+
+                    b.Property<int?>("TotalInteractions")
+                        .HasColumnType("integer")
+                        .HasColumnName("TOTAL_INTERACTIONS");
+
+                    b.Property<int?>("Views")
+                        .HasColumnType("integer")
+                        .HasColumnName("VIEWS");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PublicationId", "CollectedAt");
+
+                    b.ToTable("SOCIAL_PUBLICATION_INSIGHT_SNAPSHOTS", (string)null);
+                });
+
             modelBuilder.Entity("Sienna.Domain.Entities.Workflow.Campaign", b =>
                 {
                     b.Property<Guid>("Id")
@@ -741,6 +794,17 @@ namespace Sienna.Infrastructure.Migrations
                     b.Navigation("Post");
 
                     b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("Sienna.Domain.Entities.Social.PublicationInsightSnapshot", b =>
+                {
+                    b.HasOne("Sienna.Domain.Entities.Social.PostPublication", "Publication")
+                        .WithMany()
+                        .HasForeignKey("PublicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Publication");
                 });
 
             modelBuilder.Entity("Sienna.Domain.Entities.Workflow.Campaign", b =>

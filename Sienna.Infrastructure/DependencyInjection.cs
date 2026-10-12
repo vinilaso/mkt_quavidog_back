@@ -93,6 +93,7 @@ namespace Sienna.Infrastructure
             services.AddScoped<IInstagramAccountRepository, InstagramAccountRepository>();
             services.AddScoped<IPostPublicationRepository, PostPublicationRepository>();
             services.AddScoped<ITeamInvitationRepository, TeamInvitationRepository>();
+            services.AddScoped<IPublicationInsightSnapshotRepository, PublicationInsightSnapshotRepository>();
         }
 
         private static void AddSecurity(IServiceCollection services, IConfiguration configuration)
