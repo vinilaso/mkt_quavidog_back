@@ -36,5 +36,8 @@ namespace Sienna.Domain.Entities.Social
                 TotalInteractions = metricList.SumOf(metric => metric.TotalInteractions)
             };
         }
+
+        public static double? CalculateEngagementRate(int? totalInteractions, int? reach) =>
+            reach is > 0 && totalInteractions is int interactions ? (double)interactions / reach.Value : null;
     }
 }

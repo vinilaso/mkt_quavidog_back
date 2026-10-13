@@ -5,6 +5,7 @@ using Sienna.Application.UseCases.Social.Instagram.ApprovePublication;
 using Sienna.Application.UseCases.Social.Instagram.CancelPublication;
 using Sienna.Application.UseCases.Social.Instagram.DeleteTeamAccount;
 using Sienna.Application.UseCases.Social.Instagram.GetPublication;
+using Sienna.Application.UseCases.Social.Instagram.GetPublicationInsights;
 using Sienna.Application.UseCases.Social.Instagram.GetTeamAccount;
 using Sienna.Application.UseCases.Social.Instagram.SearchPublication;
 using Sienna.Domain.Abstractions.Pagination;
@@ -136,6 +137,16 @@ namespace Sienna.WebApi.Endpoints
                 .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou a publicação não pertence ao time.")
                 .WithDescription("Consulta uma publicação do time com a postagem, as imagens, quem solicitou e quem revisou. Qualquer membro do time pode consultar.");
+
+            group
+                .MapGet("publications/{publicationId:guid}/insights", GetPublicationInsights)
+                .WithName("GetPublicationInsights")
+                .WithSummary("Consultar métricas da publicação")
+                .ProducesWithDescription<PublicationInsightsDTO>(StatusCodes.Status200OK, "As métricas mais recentes e o histórico de coletas. Sem coletas ainda, totals vem nulo e timeline vazia.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou a publicação não pertence ao time.")
+                .WithDescription("Retorna as métricas de uma publicação coletadas da Meta: os números mais recentes (com a taxa de engajamento) e a linha do tempo de todas as coletas, para gráficos de evolução. Stories são coletados por 24 horas; posts do feed, por 30 dias. Em publicações com vários stories, as métricas são a soma dos stories. Qualquer membro do time pode consultar.");
         }
 
         private static async Task<IResult> ConfigureInstagramAccount([FromRoute, Description("ID do time.")] Guid teamId, [FromBody] ConfigureInstagramAccountRequest request, IMediator mediator, CancellationToken cancellationToken)
@@ -263,6 +274,18 @@ namespace Sienna.WebApi.Endpoints
             var query = new GetPublicationQuery(teamId, publicationId);
             var result = await mediator.Send(query, cancellationToken);
 
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> GetPublicationInsights(
+            [FromRoute, Description("ID do time.")] Guid teamId,
+            [FromRoute, Description("ID da publicação.")] Guid publicationId,
+            IMediator mediator,
+            CancellationToken cancellationToken)
+        {
+            var result = await mediator.Send(new GetPublicationInsightsQuery(teamId, publicationId), cancellationToken);
             return result.ToHttpResult(
                 onSuccess: TypedResults.Ok
             );

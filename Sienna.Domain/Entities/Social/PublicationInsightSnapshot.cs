@@ -21,9 +21,7 @@ namespace Sienna.Domain.Entities.Social
         public int? Replies { get; private set; }
         public int? TotalInteractions { get; private set; }
 
-        public double? EngagementRate => Reach is 0 && TotalInteractions is int interactions
-            ? (double)interactions / Reach.Value
-            : null;
+        public double? EngagementRate => InsightMetrics.CalculateEngagementRate(TotalInteractions, Reach);
 
         protected PublicationInsightSnapshot()
         {
