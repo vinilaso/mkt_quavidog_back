@@ -4,6 +4,7 @@ using Sienna.Application.UseCases.Social.Instagram;
 using Sienna.Application.UseCases.Social.Instagram.ApprovePublication;
 using Sienna.Application.UseCases.Social.Instagram.CancelPublication;
 using Sienna.Application.UseCases.Social.Instagram.DeleteTeamAccount;
+using Sienna.Application.UseCases.Social.Instagram.GetCampaignInsights;
 using Sienna.Application.UseCases.Social.Instagram.GetPublication;
 using Sienna.Application.UseCases.Social.Instagram.GetPublicationInsights;
 using Sienna.Application.UseCases.Social.Instagram.GetTeamAccount;
@@ -147,6 +148,16 @@ namespace Sienna.WebApi.Endpoints
                 .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou a publicação não pertence ao time.")
                 .WithDescription("Retorna as métricas de uma publicação coletadas da Meta: os números mais recentes (com a taxa de engajamento) e a linha do tempo de todas as coletas, para gráficos de evolução. Stories são coletados por 24 horas; posts do feed, por 30 dias. Em publicações com vários stories, as métricas são a soma dos stories. Qualquer membro do time pode consultar.");
+
+            group
+                .MapGet("campaigns/{campaignId:guid}/insights", GetCampaignInsights)
+                .WithName("GetCampaignInsights")
+                .WithSummary("Consultar métricas da campanha")
+                .ProducesWithDescription<GetCampaignInsightsResponse>(StatusCodes.Status200OK, "Totais, métricas por publicação e ganhos diários da campanha.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou a campanha não pertence ao time.")
+                .WithDescription("Retorna as métricas das publicações já publicadas da campanha: a soma das métricas mais recentes (com a taxa de engajamento), os números de cada publicação para comparação e os ganhos de cada dia no horário de Brasília. Qualquer membro do time pode consultar.");
         }
 
         private static async Task<IResult> ConfigureInstagramAccount([FromRoute, Description("ID do time.")] Guid teamId, [FromBody] ConfigureInstagramAccountRequest request, IMediator mediator, CancellationToken cancellationToken)
@@ -286,6 +297,18 @@ namespace Sienna.WebApi.Endpoints
             CancellationToken cancellationToken)
         {
             var result = await mediator.Send(new GetPublicationInsightsQuery(teamId, publicationId), cancellationToken);
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> GetCampaignInsights(
+            [FromRoute, Description("ID do time.")] Guid teamId,
+            [FromRoute, Description("ID da campanha.")] Guid campaignId,
+            IMediator mediator,
+            CancellationToken cancellationToken)
+        {
+            var result = await mediator.Send(new GetCampaignInsightsQuery(teamId, campaignId), cancellationToken);
             return result.ToHttpResult(
                 onSuccess: TypedResults.Ok
             );

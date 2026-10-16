@@ -1,4 +1,5 @@
-﻿using Sienna.Shared.Extensions.System.Collections.Genenric;
+﻿using Sienna.Domain.Abstractions.Social.DTOs;
+using Sienna.Shared.Extensions.System.Collections.Genenric;
 
 namespace Sienna.Domain.Entities.Social
 {
@@ -36,6 +37,18 @@ namespace Sienna.Domain.Entities.Social
                 TotalInteractions = metricList.SumOf(metric => metric.TotalInteractions)
             };
         }
+
+        public static InsightMetrics From(InsightPointDTO point) => new()
+        {
+            Views = point.Views,
+            Reach = point.Reach,
+            Likes = point.Likes,
+            Comments = point.Comments,
+            Shares = point.Shares,
+            Saved = point.Saved,
+            Replies = point.Replies,
+            TotalInteractions = point.TotalInteractions
+        };
 
         public static double? CalculateEngagementRate(int? totalInteractions, int? reach) =>
             reach is > 0 && totalInteractions is int interactions ? (double)interactions / reach.Value : null;
