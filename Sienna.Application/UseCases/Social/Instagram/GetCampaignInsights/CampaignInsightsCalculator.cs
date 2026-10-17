@@ -13,7 +13,7 @@ namespace Sienna.Application.UseCases.Social.Instagram.GetCampaignInsights
             var publications = data.Publications
                 .Select(publication =>
                 {
-                    var latest = publication.Snapshots.LastOrDefault();
+                    var latest = publication.Snapshots.MaxBy(snapshot => snapshot.CollectedAt);
 
                     return new CampaignPublicationInsightsResponse(
                         publication.PublicationId,
@@ -65,9 +65,9 @@ namespace Sienna.Application.UseCases.Social.Instagram.GetCampaignInsights
             foreach (var publication in publications)
             {
                 var lastOfEachDay = publication.Snapshots
+                    .OrderBy(snapshot => snapshot.CollectedAt)
                     .GroupBy(snapshot => DisplayTime.ToBrazilDate(snapshot.CollectedAt))
-                    .Select(day => (Date: day.Key, Last: day.Last()))
-                    .OrderBy(day => day.Date);
+                    .Select(day => (Date: day.Key, Last: day.Last()));
 
                 InsightPointDTO? previous = null;
 
