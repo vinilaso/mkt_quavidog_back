@@ -1,4 +1,15 @@
 <Solution>
+  <Folder Name="/Itens de Solução/">
+    <File Path="global.json" />
+  </Folder>
+  <Folder Name="/tests/">
+	<File Path="tests/Directory.Build.Props" />
+	<File Path="tests/Directory.Packages.props" />
+	<File Path="tests/README.md" />
+    <Project Path="tests/Sienna.Application.UnitTests/Sienna.Application.UnitTests.csproj" />
+    <Project Path="tests/Sienna.Domain.UnitTests/Sienna.Domain.UnitTests.csproj" Id="16f4d7c9-8ca8-4ac3-a705-81deb2794b89" />
+    <Project Path="tests/Sienna.Tests.Common/Sienna.Tests.Common.csproj" Id="0161a331-943c-4a3c-abaf-3692b786c7f7" />
+  </Folder>
   <Project Path="Sienna.Application/Sienna.Application.csproj" />
   <Project Path="Sienna.Domain/Sienna.Domain.csproj" />
   <Project Path="Sienna.Infrastructure/Sienna.Infrastructure.csproj" />

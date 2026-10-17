@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<PackageReference Include="MSTest.TestFramework" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Sienna.Domain\Sienna.Domain.csproj" />
+	</ItemGroup>
+
+</Project>
