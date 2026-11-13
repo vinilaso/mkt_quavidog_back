@@ -2,15 +2,11 @@
 
 namespace Sienna.Application.UseCases.Media
 {
-    /// <summary>
-    /// Regras para os arquivos de imagem das postagens: apenas JPEG, com no máximo 8 MB.
-    /// </summary>
     internal static class PostAssetFileRules
     {
         internal const long MaxFileSizeBytes = 8 * 1024 * 1024;
         private static readonly string[] SupportedExtensions = [".jpg", ".jpeg"];
 
-        /// <summary>Validação rápida, antes de ler o conteúdo.</summary>
         internal static Result Validate(string extension, Stream content)
         {
             if (!SupportedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))

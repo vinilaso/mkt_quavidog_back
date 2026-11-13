@@ -34,7 +34,6 @@ namespace Sienna.Infrastructure.Authentication
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
-            // ValidTo é o "exp" gravado no token (UTC, com precisão de segundos).
             return new AccessToken(
                 Token: tokenHandler.WriteToken(token),
                 ExpiresAt: token.ValidTo,

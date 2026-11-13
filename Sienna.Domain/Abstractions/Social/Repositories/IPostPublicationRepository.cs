@@ -15,6 +15,7 @@ namespace Sienna.Domain.Abstractions.Social.Repositories
         Task<PagedResult<PublicationSummaryDTO>> SearchAsync(Guid teamId, PublicationFilter filter, PageRequest page, CancellationToken cancellationToken = default);
         Task<PublicationDetailsDTO?> GetDetailsAsync(Guid teamId, Guid publicationId, CancellationToken cancellationToken = default);
         Task<PublicationNotificationDTO?> GetNotificationDataAsync(Guid publicationId, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<Guid>> GetTeamPublicationsForInsightsAsync(Guid teamId, DateTime utcNow, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Guid>> GetDueForInsightsAsync(DateTime utcNow, int maxCount, CancellationToken cancellationToken = default);
     }
 }

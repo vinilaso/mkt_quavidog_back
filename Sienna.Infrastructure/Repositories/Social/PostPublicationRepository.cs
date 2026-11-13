@@ -20,10 +20,6 @@ namespace Sienna.Infrastructure.Repositories.Social
             PublicationStatus.Published
         ];
 
-        /// <summary>
-        /// Situações em que o conteúdo da postagem já foi aprovado ou enviado ao Instagram
-        /// e, por isso, não pode mais ser alterado.
-        /// </summary>
         private static readonly PublicationStatus[] ContentLockingStatuses =
         [
             PublicationStatus.Approved,
@@ -130,6 +126,22 @@ namespace Sienna.Infrastructure.Repositories.Social
                     FailureReason = publication.FailureReason
                 })
                 .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<Guid>> GetTeamPublicationsForInsightsAsync(Guid teamId, DateTime utcNow, CancellationToken cancellationToken = default)
+        {
+            var storyStart = InsightCollectionPolicy.GetStoryStart(utcNow);
+            var feedStart = InsightCollectionPolicy.GetFeedStart(utcNow);
+
+            return await Context.Set<PostPublication>()
+                .Where(publication => publication.TeamId == teamId && publication.Status == PublicationStatus.Published && publication.PublishedAt != null)
+                .Where(publication =>
+                    (publication.Format == PublicationFormat.Story && publication.PublishedAt > storyStart) ||
+                    (publication.Format == PublicationFormat.Feed && publication.PublishedAt > feedStart)
+                )
+                .OrderByDescending(publication => publication.PublishedAt)
+                .Select(publication => publication.Id)
+                .ToListAsync(cancellationToken);
         }
 
         public async Task<IReadOnlyList<Guid>> GetDueForInsightsAsync(DateTime utcNow, int maxCount, CancellationToken cancellationToken = default)

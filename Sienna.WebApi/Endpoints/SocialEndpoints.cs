@@ -8,6 +8,8 @@ using Sienna.Application.UseCases.Social.Instagram.GetCampaignInsights;
 using Sienna.Application.UseCases.Social.Instagram.GetPublication;
 using Sienna.Application.UseCases.Social.Instagram.GetPublicationInsights;
 using Sienna.Application.UseCases.Social.Instagram.GetTeamAccount;
+using Sienna.Application.UseCases.Social.Instagram.RefreshPublicationInsights;
+using Sienna.Application.UseCases.Social.Instagram.RefreshTeamInsights;
 using Sienna.Application.UseCases.Social.Instagram.SearchPublication;
 using Sienna.Domain.Abstractions.Pagination;
 using Sienna.Domain.Abstractions.Social.DTOs;
@@ -16,6 +18,7 @@ using Sienna.WebApi.Endpoints.Models.Pagination;
 using Sienna.WebApi.Endpoints.Models.Social.Instagram;
 using Sienna.WebApi.Extensions;
 using Sienna.WebApi.OpenApi;
+using Sienna.WebApi.RateLimiting;
 using System.ComponentModel;
 
 namespace Sienna.WebApi.Endpoints
@@ -148,6 +151,34 @@ namespace Sienna.WebApi.Endpoints
                 .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time.")
                 .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou a publicação não pertence ao time.")
                 .WithDescription("Retorna as métricas de uma publicação coletadas da Meta: os números mais recentes (com a taxa de engajamento) e a linha do tempo de todas as coletas, para gráficos de evolução. Stories são coletados por 24 horas; posts do feed, por 30 dias. Em publicações com vários stories, as métricas são a soma dos stories. Qualquer membro do time pode consultar.");
+
+            group
+                .MapPost("publications/{publicationId:guid}/insights/refresh", RefreshPublicationInsights)
+                .RequireRateLimiting(RateLimitPolicies.InsightsRefresh)
+                .WithName("RefreshPublicationInsights")
+                .WithSummary("Forçar coleta de métricas da publicação")
+                .ProducesWithDescription<PublicationInsightsDTO>(StatusCodes.Status200OK, "As métricas foram coletadas na Meta (ou a última coleta tem menos de 1 minuto) e são retornadas no mesmo formato da consulta de métricas.")
+                .ProducesProblemWithDescription(StatusCodes.Status400BadRequest, "O time não tem conta do Instagram conectada, ou o token armazenado não pôde ser lido.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "O time não existe ou a publicação não pertence ao time.")
+                .ProducesProblemWithDescription(StatusCodes.Status409Conflict, "A publicação ainda não foi publicada no Instagram.")
+                .ProducesProblemWithDescription(StatusCodes.Status429TooManyRequests, "O usuário fez mais de 30 solicitações de coleta no último minuto.")
+                .ProducesProblemWithDescription(StatusCodes.Status502BadGateway, "Não foi possível obter as métricas na API da Meta. Tente novamente em instantes.")
+                .WithDescription("Coleta as métricas de uma publicação na Meta imediatamente, sem esperar o ciclo automático, e retorna as métricas atualizadas com o histórico. Para não sobrecarregar a API da Meta, se a última coleta tiver menos de 1 minuto, as métricas existentes são retornadas sem nova coleta. A coleta forçada entra no histórico como as demais. Qualquer membro do time pode solicitar.");
+
+            group
+                .MapPost("publications/insights/refresh", RefreshTeamInsights)
+                .RequireRateLimiting(RateLimitPolicies.TeamInsightsRefresh)
+                .WithName("RefreshTeamInsights")
+                .WithSummary("Forçar coleta de métricas de todas as publicações do time")
+                .ProducesWithDescription<RefreshTeamInsightsResponse>(StatusCodes.Status200OK, "Resumo da coleta: total de publicações elegíveis, quantas foram coletadas, quantas foram ignoradas (coletadas há menos de 1 minuto) e as que falharam, com o motivo.")
+                .ProducesProblemWithDescription(StatusCodes.Status400BadRequest, "O time não tem conta do Instagram conectada, ou o token armazenado não pôde ser lido.")
+                .ProducesWithDescription(StatusCodes.Status401Unauthorized, "O usuário não está autenticado.")
+                .ProducesProblemWithDescription(StatusCodes.Status403Forbidden, "O usuário não pertence ao time.")
+                .ProducesProblemWithDescription(StatusCodes.Status404NotFound, "Não foi encontrado um time com o ID informado.")
+                .ProducesProblemWithDescription(StatusCodes.Status429TooManyRequests, "O usuário fez mais de 5 solicitações de coleta do time no último minuto.")
+                .WithDescription("Coleta imediatamente, na Meta, as métricas de todas as publicações do time que ainda estão no período de coleta (stories publicados nas últimas 24 horas e posts do feed nos últimos 30 dias). Publicações coletadas há menos de 1 minuto são ignoradas. A falha em uma publicação não interrompe as demais; ela é listada em failures. Qualquer membro do time pode solicitar.");
 
             group
                 .MapGet("campaigns/{campaignId:guid}/insights", GetCampaignInsights)
@@ -297,6 +328,29 @@ namespace Sienna.WebApi.Endpoints
             CancellationToken cancellationToken)
         {
             var result = await mediator.Send(new GetPublicationInsightsQuery(teamId, publicationId), cancellationToken);
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> RefreshPublicationInsights(
+            [FromRoute, Description("ID do time.")] Guid teamId,
+            [FromRoute, Description("ID da publicação.")] Guid publicationId,
+            IMediator mediator,
+            CancellationToken cancellationToken)
+        {
+            var result = await mediator.Send(new RefreshPublicationInsightsCommand(teamId, publicationId), cancellationToken);
+            return result.ToHttpResult(
+                onSuccess: TypedResults.Ok
+            );
+        }
+
+        private static async Task<IResult> RefreshTeamInsights(
+            [FromRoute, Description("ID do time.")] Guid teamId,
+            IMediator mediator,
+            CancellationToken cancellationToken)
+        {
+            var result = await mediator.Send(new RefreshTeamInsightsCommand(teamId), cancellationToken);
             return result.ToHttpResult(
                 onSuccess: TypedResults.Ok
             );

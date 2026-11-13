@@ -8,6 +8,8 @@ namespace Sienna.WebApi.RateLimiting
     {
         internal const string Invitations = "invitations";
         internal const string Authentication = "authentication";
+        internal const string InsightsRefresh = "insights-refresh";
+        internal const string TeamInsightsRefresh = "team-insights-refresh";
 
         internal static IServiceCollection AddApiRateLimiting(this IServiceCollection services)
         {
@@ -29,6 +31,22 @@ namespace Sienna.WebApi.RateLimiting
                     return RateLimitPartition.GetFixedWindowLimiter(
                         GetPartitionKey(httpContext),
                         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }
+                    );
+                });
+
+                options.AddPolicy(InsightsRefresh, httpContext =>
+                {
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        GetPartitionKey(httpContext),
+                        _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1) }
+                    );
+                });
+
+                options.AddPolicy(TeamInsightsRefresh, httpContext =>
+                {
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        GetPartitionKey(httpContext),
+                        _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1) }
                     );
                 });
             });

@@ -59,9 +59,6 @@ namespace Sienna.Domain.Entities.Media
 
         public bool HasAsset(Guid mediaId) => _assets.Exists(asset => asset.MediaId == mediaId);
 
-        /// <summary>
-        /// Remove a imagem da postagem e renumera as restantes (1, 2, 3...) mantendo a ordem relativa.
-        /// </summary>
         public Result RemoveAsset(Guid mediaId)
         {
             var asset = _assets.Find(a => a.MediaId == mediaId);
@@ -81,10 +78,6 @@ namespace Sienna.Domain.Entities.Media
             return Result.Success();
         }
 
-        /// <summary>
-        /// Reordena as imagens. A lista deve conter todas as imagens da postagem, cada uma uma única vez;
-        /// a primeira da lista fica na posição 1.
-        /// </summary>
         public Result ReorderAssets(IReadOnlyList<Guid> mediaIds)
         {
             ArgumentNullException.ThrowIfNull(mediaIds);

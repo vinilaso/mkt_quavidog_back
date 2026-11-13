@@ -8,6 +8,13 @@ namespace Sienna.Infrastructure.Repositories.Social
 {
     internal sealed class PublicationInsightSnapshotRepository(ApplicationContext context) : AbstractRepository<PublicationInsightSnapshot>(context), IPublicationInsightSnapshotRepository
     {
+        public async Task<DateTime?> GetLastCollectedAtAsync(Guid publicationId, CancellationToken cancellationToken = default)
+        {
+            return await Context.Set<PublicationInsightSnapshot>()
+                .Where(snapshot => snapshot.PublicationId == publicationId)
+                .MaxAsync(snapshot => (DateTime?)snapshot.CollectedAt, cancellationToken);
+        }
+
         public async Task<PublicationInsightsDTO?> GetPublicationInsightsAsync(Guid teamId, Guid publicationId, CancellationToken cancellationToken = default)
         {
             var publication = await Context.Set<PostPublication>()

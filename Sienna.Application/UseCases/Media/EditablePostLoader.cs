@@ -6,10 +6,6 @@ using Sienna.Domain.Entities.Media;
 
 namespace Sienna.Application.UseCases.Media
 {
-    /// <summary>
-    /// Carrega uma postagem garantindo que o usuário autenticado é o autor e que o conteúdo
-    /// ainda pode ser alterado (nenhuma publicação aprovada, em andamento ou publicada).
-    /// </summary>
     internal static class EditablePostLoader
     {
         internal static async Task<Result<Post>> LoadAsync(

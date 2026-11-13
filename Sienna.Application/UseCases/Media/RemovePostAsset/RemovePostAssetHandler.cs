@@ -27,7 +27,6 @@ namespace Sienna.Application.UseCases.Media.RemovePostAsset
             if (removeResult.IsFailure)
                 return removeResult.Error;
 
-            // A mídia foi criada para esta postagem; só é apagada se nenhuma outra postagem a usar.
             if (await mediaRepository.FindByIdAsync(request.MediaId, cancellationToken) is MediaEntity media &&
                 !await mediaRepository.IsLinkedToOtherPostsAsync(media.Id, request.PostId, cancellationToken))
             {
