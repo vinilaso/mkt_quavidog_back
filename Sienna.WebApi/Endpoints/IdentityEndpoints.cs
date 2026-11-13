@@ -47,7 +47,7 @@ namespace Sienna.WebApi.Endpoints
                 .WithSummary("Autenticar usuário (login)")
                 .ProducesWithDescription<LoginResponse>(StatusCodes.Status200OK, "O usuário com e-mail e senha informados foi encontrado e o token JWT foi gerado.")
                 .ProducesProblemWithDescription(StatusCodes.Status401Unauthorized, "Não foi encontrado usuário com e-mail e senha informados, ou o usuário está bloqueado.")
-                .WithDescription("Gera um token JWT que pode ser utilizado como forma de autenticação.");
+                .WithDescription("Gera um token JWT que pode ser utilizado como forma de autenticação. A resposta informa a data de expiração do token (UTC) e o tempo de validade em milissegundos.");
 
             group
                 .MapPost("tokens/reset-password", SendPasswordResetToken)
@@ -148,7 +148,7 @@ namespace Sienna.WebApi.Endpoints
         {
             var result = await mediator.Send(request.ToCommand(), cancellationToken);
             return result.ToHttpResult(
-                onSuccess: token => TypedResults.Ok(new LoginResponse(token))
+                onSuccess: accessToken => TypedResults.Ok(new LoginResponse(accessToken.Token, accessToken.ExpiresAt, accessToken.ExpiresInMilliseconds))
             );
         }
 

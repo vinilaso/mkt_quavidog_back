@@ -11,11 +11,11 @@ namespace Sienna.Application.UseCases.Identity.Login
     public sealed class LoginHandler(
         IIdentityService identityService,
         ITokenService tokenService,
-        IPublisher publisher) : IRequestHandler<LoginCommand, Result<string>>
+        IPublisher publisher) : IRequestHandler<LoginCommand, Result<AccessToken>>
     {
         private static readonly Error UnauthorizedError = Error.Unauthorized("InvalidCredentials", "Email or password is invalid.");
 
-        public async Task<Result<string>> Handle(LoginCommand request, CancellationToken cancellationToken)
+        public async Task<Result<AccessToken>> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
             var authenticationResult = await identityService.AuthenticateAsync(request.Email, request.Password, cancellationToken);
 
@@ -32,7 +32,7 @@ namespace Sienna.Application.UseCases.Identity.Login
             };
         }
 
-        private async Task<Result<string>> PublishLockedOutNotification(User user, CancellationToken cancellationToken)
+        private async Task<Result<AccessToken>> PublishLockedOutNotification(User user, CancellationToken cancellationToken)
         {
             if (!string.IsNullOrWhiteSpace(user.Email))
             {

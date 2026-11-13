@@ -10,7 +10,9 @@ namespace Sienna.Infrastructure.Authentication
 {
     public sealed class TokenService(IConfiguration configuration) : ITokenService
     {
-        public string GenerateToken(User user)
+        private static readonly TimeSpan TokenLifetime = TimeSpan.FromMinutes(30);
+
+        public AccessToken GenerateToken(User user)
         {
             JWTSection jwtSection = configuration.GetJWTSection();
 
@@ -23,7 +25,7 @@ namespace Sienna.Infrastructure.Authentication
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(30),
+                Expires = DateTime.UtcNow.Add(TokenLifetime),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(jwtSection.Key), SecurityAlgorithms.HmacSha256Signature),
                 Issuer = jwtSection.Issuer,
                 Audience = jwtSection.Audience
@@ -32,7 +34,12 @@ namespace Sienna.Infrastructure.Authentication
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
-            return tokenHandler.WriteToken(token);
+            // ValidTo é o "exp" gravado no token (UTC, com precisão de segundos).
+            return new AccessToken(
+                Token: tokenHandler.WriteToken(token),
+                ExpiresAt: token.ValidTo,
+                ExpiresInMilliseconds: (long)TokenLifetime.TotalMilliseconds
+            );
         }
     }
 }
