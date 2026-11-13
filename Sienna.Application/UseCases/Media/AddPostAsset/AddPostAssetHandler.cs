@@ -3,48 +3,43 @@ using Sienna.Domain.Abstractions;
 using Sienna.Domain.Abstractions.Media.Repositories;
 using Sienna.Domain.Abstractions.Results;
 using Sienna.Domain.Abstractions.Security;
-using Sienna.Domain.Entities.Media;
+using Sienna.Domain.Abstractions.Social.Repositories;
 using MediaEntity = Sienna.Domain.Entities.Media.Media;
 
 namespace Sienna.Application.UseCases.Media.AddPostAsset
 {
     internal sealed class AddPostAssetHandler(
         IPostRepository postRepository,
+        IPostPublicationRepository publicationRepository,
         IMediaRepository mediaRepository,
         IUserContext userContext,
         IUnitOfWork uow) : IRequestHandler<AddPostAssetCommand, Result<Guid>>
     {
-        private const long MaxFileSizeBytes = 8 * 1024 * 1024;
-        private static readonly string[] SupportedExtensions = [".jpg", ".jpeg"];
-
         public async Task<Result<Guid>> Handle(AddPostAssetCommand request, CancellationToken cancellationToken)
         {
-            if (!SupportedExtensions.Contains(request.Extension, StringComparer.OrdinalIgnoreCase))
-                return Error.Validation("Asset.UnsupportedFormat", "Envie uma imagem JPEG (.jpg ou .jpeg).");
+            var fileResult = PostAssetFileRules.Validate(request.Extension, request.Content);
 
-            if (request.Content.CanSeek && request.Content.Length > MaxFileSizeBytes)
-                return FileTooLarge();
+            if (fileResult.IsFailure)
+                return fileResult.Error;
 
-            if (await postRepository.FindByIdAsync(request.PostId, cancellationToken) is not Post post || post.AuthorId != userContext.Id)
-                return Error.NotFound("Post.NotFound", $"Não foi encontrada uma postagem no servidor com o ID {request.PostId}.");
+            var postResult = await EditablePostLoader.LoadAsync(request.PostId, userContext, postRepository, publicationRepository, cancellationToken);
 
-            using var memoryStream = new MemoryStream();
-            await request.Content.CopyToAsync(memoryStream, cancellationToken);
+            if (postResult.IsFailure)
+                return postResult.Error;
 
-            if (memoryStream.Length == 0)
-                return Error.Validation("Asset.EmptyFile", "O arquivo enviado está vazio.");
+            var contentResult = await PostAssetFileRules.ReadAsync(request.Content, cancellationToken);
 
-            if (memoryStream.Length > MaxFileSizeBytes)
-                return FileTooLarge();
+            if (contentResult.IsFailure)
+                return contentResult.Error;
 
             var media = new MediaEntity
             {
                 Name = request.FileName,
                 Extension = request.Extension.ToLowerInvariant(),
-                Content = memoryStream.ToArray()
+                Content = contentResult.Value
             };
 
-            var assetResult = post.TryAddAsset(media.Id, request.SequenceOrder);
+            var assetResult = postResult.Value.TryAddAsset(media.Id, request.SequenceOrder);
 
             if (assetResult.IsFailure)
                 return assetResult.Error;
@@ -54,8 +49,5 @@ namespace Sienna.Application.UseCases.Media.AddPostAsset
 
             return media.Id;
         }
-
-        private static Error FileTooLarge() =>
-            Error.Validation("Asset.FileTooLarge", $"A imagem deve ter no máximo {MaxFileSizeBytes / (1024 * 1024)} MB.");
     }
 }

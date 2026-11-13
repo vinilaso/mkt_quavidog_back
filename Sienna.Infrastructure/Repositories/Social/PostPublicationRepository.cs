@@ -20,6 +20,17 @@ namespace Sienna.Infrastructure.Repositories.Social
             PublicationStatus.Published
         ];
 
+        /// <summary>
+        /// Situações em que o conteúdo da postagem já foi aprovado ou enviado ao Instagram
+        /// e, por isso, não pode mais ser alterado.
+        /// </summary>
+        private static readonly PublicationStatus[] ContentLockingStatuses =
+        [
+            PublicationStatus.Approved,
+            PublicationStatus.Publishing,
+            PublicationStatus.Published
+        ];
+
         public async Task<IReadOnlyList<Guid>> ClaimDueAsync(DateTime utcNow, int maxCount, CancellationToken cancellationToken = default)
         {
             var candidateIds = await Context.Set<PostPublication>()
@@ -199,6 +210,15 @@ namespace Sienna.Infrastructure.Repositories.Social
                     publication.PostId == postId &&
                     publication.Format == format &&
                     BlockingStatuses.Contains(publication.Status),
+                    cancellationToken);
+        }
+
+        public async Task<bool> HasContentLockingPublicationAsync(Guid postId, CancellationToken cancellationToken = default)
+        {
+            return await Context.Set<PostPublication>()
+                .AnyAsync(publication =>
+                    publication.PostId == postId &&
+                    ContentLockingStatuses.Contains(publication.Status),
                     cancellationToken);
         }
 

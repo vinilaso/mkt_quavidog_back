@@ -50,6 +50,57 @@ namespace Sienna.Domain.Entities.Media
             }
 
             return Result.Success();
-        }      
+        }
+
+        public void UpdateCaption(string caption)
+        {
+            Caption = caption ?? string.Empty;
+        }
+
+        public bool HasAsset(Guid mediaId) => _assets.Exists(asset => asset.MediaId == mediaId);
+
+        /// <summary>
+        /// Remove a imagem da postagem e renumera as restantes (1, 2, 3...) mantendo a ordem relativa.
+        /// </summary>
+        public Result RemoveAsset(Guid mediaId)
+        {
+            var asset = _assets.Find(a => a.MediaId == mediaId);
+
+            if (asset is null)
+                return AssetNotFound(mediaId);
+
+            _assets.Remove(asset);
+
+            var sequenceOrder = 1;
+
+            foreach (var remaining in _assets.OrderBy(a => a.SequenceOrder).ToList())
+            {
+                remaining.SequenceOrder = sequenceOrder++;
+            }
+
+            return Result.Success();
+        }
+
+        /// <summary>
+        /// Reordena as imagens. A lista deve conter todas as imagens da postagem, cada uma uma única vez;
+        /// a primeira da lista fica na posição 1.
+        /// </summary>
+        public Result ReorderAssets(IReadOnlyList<Guid> mediaIds)
+        {
+            ArgumentNullException.ThrowIfNull(mediaIds);
+
+            if (mediaIds.Count != _assets.Count || mediaIds.Distinct().Count() != mediaIds.Count || !mediaIds.All(HasAsset))
+                return Error.Validation("Asset.InvalidOrder", "Informe todas as imagens da postagem, cada uma uma única vez, na nova ordem.");
+
+            for (var index = 0; index < mediaIds.Count; index++)
+            {
+                _assets.Find(a => a.MediaId == mediaIds[index])!.SequenceOrder = index + 1;
+            }
+
+            return Result.Success();
+        }
+
+        public static Error AssetNotFound(Guid mediaId) =>
+            Error.NotFound("Asset.NotFound", $"A postagem não possui uma imagem com o ID {mediaId}.");
     }
 }
